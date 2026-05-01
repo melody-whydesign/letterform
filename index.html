@@ -288,7 +288,7 @@
       const d = depth * 1.45;
       group.add(box(w * 0.65, h * 0.9, d, x, baseY + h * 0.45, depth * 0.35, 'ifc_tall_body'));
       group.add(box(w * 0.48, h * 0.08, d, x, baseY + h * 0.94, depth * 0.35, 'ifc_cap'));
-      addSpire(group, x, baseY + h * 0.96, h * 0.13, depth, 'ifc_spire'));
+      addSpire(group, x, baseY + h * 0.96, h * 0.13, depth, 'ifc_spire');
       for (let i = -2; i <= 2; i++) addDetail(group, w * 0.025, h * 0.72, x + i * w * 0.1, baseY + h * 0.48, depth, 'ifc_vertical_ribs');
       for (let i = 1; i <= 5; i++) addDetail(group, w * 0.52, 0.035, x, baseY + h * (0.18 + i * 0.12), depth, 'ifc_floor_lines');
     }
