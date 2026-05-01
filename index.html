@@ -139,13 +139,11 @@
         <label>2. Select soundwave section</label>
         <div class="waveWrap">
           <canvas id="waveCanvas" width="720" height="216"></canvas>
-          <div class="cropControls">
-            <div class="cropLabels"><span>Crop start: <b id="cropStartVal">0.00s</b></span><span>Crop end: <b id="cropEndVal">0.00s</b></span></div>
-            <input id="cropStart" type="range" min="0" max="1000" value="0" disabled />
-            <input id="cropEnd" type="range" min="0" max="1000" value="1000" disabled />
-          </div>
+          <div class="cropLabels" style="margin-top:10px"><span>Crop start: <b id="cropStartVal">0.00s</b></span><span>Crop end: <b id="cropEndVal">0.00s</b></span></div>
+          <input id="cropStart" type="hidden" min="0" max="1000" value="0" />
+          <input id="cropEnd" type="hidden" min="0" max="1000" value="1000" />
         </div>
-        <div class="hint">Drag the crop sliders, or click the waveform to choose where playback starts. The 3D voice strips update from the selected crop.</div>
+        <div class="hint">Drag directly on the waveform to choose the crop area. Click inside the selected area to choose where replay starts.</div>
       </div>
 
       <div class="twocol">
@@ -185,15 +183,8 @@
     import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 
     const LOGO_SVG = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200">
-        <rect width="1200" height="1200" fill="white"/>
-        <g fill="#ffcc00">
-          <path d="M418 150 C552 145 665 168 732 228 C804 292 806 397 740 465 C686 521 585 542 520 512 C485 496 470 468 460 430 C436 330 403 234 330 160 Z"/>
-          <path d="M68 348 C164 368 288 362 430 363 L852 363 L930 270 C942 256 958 256 972 267 L1086 360 C1115 383 1108 391 1076 391 L205 391 C158 391 120 394 94 400 Z"/>
-          <path d="M248 442 C373 541 487 674 498 748 C506 808 468 858 416 859 C372 860 355 831 349 779 C329 615 292 512 248 442 Z"/>
-          <path d="M728 746 C792 732 866 694 942 641 C1035 576 1065 501 1018 457 C970 412 895 428 840 492 C782 560 758 643 728 746 Z M512 965 C563 895 593 803 620 714 C663 574 769 431 877 386 C957 353 1033 350 1073 401 C1125 466 1088 565 976 649 C893 711 799 753 724 762 C696 852 649 925 565 978 C706 1032 862 1055 990 1014 C1110 976 1174 901 1135 833 C1104 778 1025 771 950 812 C918 830 890 857 859 888 L849 879 C878 829 916 789 972 770 C1072 737 1178 783 1196 877 C1215 974 1134 1052 1014 1081 C868 1117 704 1089 545 997 C410 1082 235 1087 130 1045 C35 1007 9 929 59 881 C126 818 246 844 355 893 C409 917 460 943 512 965 Z M499 988 C451 963 400 938 343 917 C254 885 173 889 132 933 C101 966 127 1010 190 1032 C270 1061 404 1040 499 988 Z"/>
-          <path d="M500 749 C543 754 582 757 621 757 L616 769 C575 769 535 765 497 759 Z"/>
-        </g>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 238 267">
+        <path fill="#ffcc00" fill-rule="evenodd" d="M 95.398438 47.269531 L 93.542969 49.042969 C 97.457031 51.699219 98.515625 52.773438 100.703125 55.800781 C 101.914062 57.480469 104.289062 61.476562 105.707031 65.886719 C 107.910156 73.089844 107.15625 80.476562 119.445312 80.476562 C 124.191406 80.386719 128.601562 78.378906 130.707031 75.578125 C 135.144531 69.675781 135.128906 57.050781 120.773438 51.421875 C 112.375 48.125 107.636719 47.421875 95.398438 47.269531 Z M 177.015625 66.390625 C 176.378906 66.382812 175.777344 66.613281 175.273438 67.183594 L 161.828125 82.695312 L 70.035156 82.695312 C 55.339844 82.695312 44.851562 82.078125 38.160156 80.484375 L 42.394531 88.554688 C 51.917969 87.207031 61.445312 87.078125 71.195312 87.078125 L 198.410156 87.078125 C 200.503906 87.078125 200.824219 84.660156 197.546875 81.964844 L 179.507812 67.410156 C 178.714844 66.8125 177.835938 66.402344 177.015625 66.390625 Z M 175.660156 92.296875 C 156.910156 92.296875 142.484375 106.691406 131.339844 123.511719 C 126.894531 130.226562 124.613281 137.222656 122.421875 144.402344 C 116.777344 144.269531 111.234375 143.714844 106.132812 142.894531 C 105.527344 137.34375 102.910156 131.421875 99.332031 125.757812 C 89.136719 109.640625 75.023438 99.808594 68.761719 94.933594 L 66.589844 97.0625 C 74.15625 107.605469 78.011719 121.496094 80.1875 132.859375 C 82.492188 144.902344 82.175781 154.695312 86.09375 158.511719 C 89.925781 162.101562 95.578125 162.277344 100.097656 158.472656 C 104.734375 154.570312 106.472656 149.703125 106.253906 144.429688 C 107.882812 144.671875 114.222656 145.554688 121.960938 145.910156 C 121.59375 147.117188 121.226562 148.332031 120.84375 149.550781 C 117.222656 161.171875 113.046875 171.28125 108.71875 177.363281 C 81.628906 167.152344 76.550781 160.984375 59.410156 160.984375 C 48.757812 160.984375 39.566406 167.035156 39.566406 175.757812 C 39.566406 190.476562 63.378906 194.253906 72.960938 194.253906 C 91.085938 194.253906 104.183594 188.734375 113.457031 182.707031 C 113.859375 182.878906 114.261719 183.054688 114.667969 183.222656 C 128.726562 188.984375 144.117188 194.105469 161.355469 194.105469 C 186.121094 194.105469 198.886719 183.109375 198.886719 173.796875 C 198.886719 157.875 183.851562 152.683594 180.167969 151.984375 C 167.820312 149.640625 161.429688 154.410156 154.226562 164.28125 L 155.683594 165.453125 C 155.683594 165.453125 160.050781 157.109375 168.371094 154.054688 C 174.097656 151.953125 183.617188 152.597656 187.566406 158.75 C 191.753906 165.273438 188.429688 176.894531 176.890625 182.90625 C 166.386719 188.375 150.59375 189.921875 132.019531 185.085938 C 126.382812 183.617188 122.585938 182.308594 116.898438 180.328125 C 120.179688 177.925781 122.894531 175.546875 125.105469 173.5 C 134.398438 164.898438 138.65625 155.066406 142.023438 144.722656 C 159.996094 140.992188 166.511719 135.59375 174.476562 130.105469 C 188.285156 120.59375 194.277344 107.738281 190.613281 100.410156 C 188.25 95.675781 183.253906 92.296875 175.660156 92.296875 Z M 176.15625 93.835938 C 181.613281 93.753906 186.8125 95.824219 188.652344 100.070312 C 195.621094 116.1875 167.046875 134.085938 152.792969 139.832031 C 149.609375 141.113281 146.191406 142.089844 142.636719 142.808594 C 147.132812 128.503906 150.425781 113.304688 163.269531 99.058594 C 166.335938 95.65625 171.34375 93.910156 176.15625 93.835938 Z M 65.824219 167.074219 C 78.125 167.074219 91.855469 174.359375 106.511719 179.777344 C 106.582031 179.800781 106.652344 179.832031 106.726562 179.855469 C 106.617188 179.976562 106.507812 180.097656 106.398438 180.210938 C 103.21875 183.535156 93.601562 190.222656 73.839844 190.222656 C 56.648438 190.222656 51.183594 182.296875 51.183594 178.101562 C 51.183594 172.757812 57.886719 167.074219 65.824219 167.074219 Z M 65.824219 167.074219"/>
       </svg>`;
 
     const canvas = document.querySelector('#scene');
@@ -320,6 +311,7 @@
       const scale = Number(ui.heightScale.value);
       const spacing = width / count;
       const stripeW = Math.max(0.055, spacing * 0.35);
+      const voiceStripeW = Math.max(0.085, spacing * 0.58);
 
       root.add(box(width + 0.55, maxH + 0.55, depth * 0.42, mats.base, 0, (maxH + 0.55) / 2, -depth * 0.35, 'solid_back_plate'));
       root.add(box(width + 0.85, 0.28, depth * 1.8, mats.black, 0, 0.14, depth * 0.12, 'bottom_foot'));
@@ -341,7 +333,7 @@
           const h = minH + amp * (maxH - minH);
           const mat = palette[i % palette.length];
           const zJitter = 0.23 + (i % 3) * 0.015;
-          root.add(box(stripeW, h, depth * 1.45, mat, x, h / 2 + 0.32, zJitter, 'voice_wave_stripe'));
+          root.add(box(voiceStripeW, h, depth * 1.45, mat, x, h / 2 + 0.32, zJitter, 'voice_wave_stripe'));
         }
       }
 
@@ -355,9 +347,8 @@
     }
 
     function buildCenteredLogo(width, maxH, depth) {
-      const logoSize = 3.65;
-      const targetW = logoSize;
-      const targetH = logoSize;
+      const targetH = 3.55;
+      const targetW = targetH * (238 / 267);
       const reliefDepth = depth * 0.28;
       const loader = new SVGLoader();
       const svgData = loader.parse(LOGO_SVG);
@@ -365,23 +356,20 @@
       logoGroup.name = 'center_logo_exact_relief';
 
       for (const path of svgData.paths) {
-        const color = path.color ? new THREE.Color(path.color) : new THREE.Color(0xffcc00);
-        if (color.r > 0.95 && color.g > 0.95 && color.b > 0.95) continue;
         const shapes = SVGLoader.createShapes(path);
         for (const shape of shapes) {
           const geometry = new THREE.ExtrudeGeometry(shape, {
             depth: reliefDepth,
             bevelEnabled: false,
-            curveSegments: 12
+            curveSegments: 24
           });
           const mesh = new THREE.Mesh(geometry, mats.logo);
           logoGroup.add(mesh);
         }
       }
 
-      const scale = targetW / 1200;
+      const scale = targetW / 238;
       logoGroup.scale.set(scale, -scale, 1);
-      logoGroup.rotation.x = 0;
       logoGroup.position.set(-targetW / 2, maxH * 0.53 + targetH / 2, depth * 0.9);
       root.add(logoGroup);
     }
@@ -523,6 +511,12 @@
 
     function playRecording() {
       if (!recordedAudioUrl) return;
+      if (!player.paused) {
+        player.pause();
+        ui.playBtn.textContent = 'Play';
+        return;
+      }
+      ui.playBtn.textContent = 'Pause';
       const start = Math.max(cropStartSeconds(), playStartSeconds);
       const end = cropEndSeconds();
       player.currentTime = start;
@@ -532,6 +526,7 @@
       const stopTimer = setInterval(() => {
         if (player.paused || player.currentTime >= end) {
           player.pause();
+          ui.playBtn.textContent = 'Play';
           clearInterval(stopTimer);
         }
       }, 30);
@@ -632,15 +627,67 @@
     ui.cropStart.addEventListener('input', () => handleCropChange('start'));
     ui.cropEnd.addEventListener('input', () => handleCropChange('end'));
 
-    ui.waveCanvas.addEventListener('click', (event) => {
-      if (!duration) return;
+    let isDraggingCrop = false;
+    let dragMode = 'move';
+    let dragOffset = 0;
+
+    function pointerRatio(event) {
       const rect = ui.waveCanvas.getBoundingClientRect();
-      const ratio = (event.clientX - rect.left) / rect.width;
+      return Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    }
+
+    function setCropFromRatios(start, end) {
+      start = Math.max(0, Math.min(0.98, start));
+      end = Math.max(0.02, Math.min(1, end));
+      if (end - start < 0.02) {
+        if (dragMode === 'start') start = end - 0.02;
+        else end = start + 0.02;
+      }
+      ui.cropStart.value = Math.round(start * 1000);
+      ui.cropEnd.value = Math.round(end * 1000);
+      playStartSeconds = cropStartSeconds();
+      computeWaveFromCrop();
+      buildModel();
+    }
+
+    ui.waveCanvas.addEventListener('pointerdown', (event) => {
+      if (!duration) return;
+      ui.waveCanvas.setPointerCapture(event.pointerId);
+      const r = pointerRatio(event);
       const s = Number(ui.cropStart.value) / 1000;
       const e = Number(ui.cropEnd.value) / 1000;
-      const clamped = Math.max(s, Math.min(e, ratio));
-      playStartSeconds = clamped * duration;
-      drawWaveCanvas();
+      const edge = 0.035;
+      isDraggingCrop = true;
+      if (Math.abs(r - s) < edge) dragMode = 'start';
+      else if (Math.abs(r - e) < edge) dragMode = 'end';
+      else if (r > s && r < e) {
+        dragMode = 'move';
+        dragOffset = r - s;
+        playStartSeconds = r * duration;
+        drawWaveCanvas();
+      } else {
+        dragMode = 'end';
+        setCropFromRatios(Math.min(s, r), Math.max(s, r));
+      }
+    });
+
+    ui.waveCanvas.addEventListener('pointermove', (event) => {
+      if (!isDraggingCrop || !duration) return;
+      const r = pointerRatio(event);
+      const s = Number(ui.cropStart.value) / 1000;
+      const e = Number(ui.cropEnd.value) / 1000;
+      const len = e - s;
+      if (dragMode === 'start') setCropFromRatios(r, e);
+      else if (dragMode === 'end') setCropFromRatios(s, r);
+      else {
+        const ns = Math.max(0, Math.min(1 - len, r - dragOffset));
+        setCropFromRatios(ns, ns + len);
+      }
+    });
+
+    ui.waveCanvas.addEventListener('pointerup', (event) => {
+      isDraggingCrop = false;
+      try { ui.waveCanvas.releasePointerCapture(event.pointerId); } catch (e) {}
     });
 
     for (const el of [ui.stripeCount, ui.heightScale, ui.baseDepth]) {
