@@ -12,7 +12,6 @@
       --muted: #6e6e73;
       --accent: #f8d000;
       --line: #e5e5e7;
-      --gold: #f8d000;
     }
     * { box-sizing: border-box; }
     body {
@@ -23,7 +22,7 @@
       -webkit-font-smoothing: antialiased;
     }
     header {
-      padding: 24px clamp(16px, 4vw, 44px) 12px;
+      padding: 28px clamp(16px, 4vw, 44px) 12px;
       display: grid;
       gap: 8px;
     }
@@ -48,25 +47,8 @@
     .row { display: grid; gap: 8px; }
     .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .threecol { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-    label { font-size: 13px; font-weight: 700; color: #4b382f; }
+    label { font-size: 13px; font-weight: 700; color: #1d1d1f; }
     input[type="range"] { width: 100%; }
-    input[type="text"] {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px 14px;
-      font: inherit;
-      font-weight: 600;
-      text-transform: uppercase;
-      background: #f5f5f7;
-      color: var(--ink);
-      outline: none;
-    }
-    input[type="text"]:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 4px rgba(248, 208, 0, .18);
-      background: #fff;
-    }
     button {
       appearance: none;
       border: none;
@@ -82,10 +64,6 @@
     button:disabled { opacity: .4; cursor: not-allowed; }
     button.secondary { background: #f2f2f2; color: #000; }
     button.export { background: var(--accent); color:#000; }
-    button:hover { transform: translateY(-1px); }
-    button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-    button.secondary { background: #8f7666; }
-    button.export { background: var(--accent); }
     .status {
       padding: 12px;
       border-radius: 12px;
@@ -99,30 +77,30 @@
       position: absolute;
       right: 16px;
       bottom: 16px;
-      background: rgba(255, 250, 243, .9);
+      background: rgba(255, 255, 255, .85);
       border: 1px solid var(--line);
       border-radius: 999px;
       padding: 9px 12px;
-      color: #59483d;
+      color: #6e6e73;
       font-size: 12px;
       backdrop-filter: blur(10px);
     }
     .waveWrap {
       position: relative;
-      border: 1px solid #d8c7b6;
+      border: 1px solid var(--line);
       border-radius: 16px;
       padding: 10px;
-      background: #fffdf9;
+      background: #fff;
     }
     #waveCanvas {
       width: 100%;
       height: 108px;
       display: block;
       border-radius: 10px;
-      background: #f4eadf;
-      cursor: pointer;
+      background: #f5f5f7;
+      cursor: crosshair;
+      touch-action: none;
     }
-    .cropControls { display: grid; gap: 6px; margin-top: 10px; }
     .cropLabels { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
     @media (max-width: 980px) {
       main { grid-template-columns: 1fr; }
@@ -142,14 +120,11 @@
 <body>
   <header>
     <h1>Voice Wave Souvenir Generator</h1>
-    <p>Record a voice, crop the preferred part of the soundwave, convert it into facade strips, keep the logo centered, and export an STL for 3D printing.</p>
+    <p>Record a voice, crop the preferred part of the soundwave, convert it into facade strips, and export an STL for 3D printing.</p>
   </header>
 
   <main>
     <section class="panel controls">
-      
-      </div>
-
       <div class="row">
         <label>1. Record voice</label>
         <div class="threecol">
@@ -157,7 +132,7 @@
           <button id="stopBtn" class="secondary" disabled>Stop</button>
           <button id="playBtn" class="secondary" disabled>Play</button>
         </div>
-        <div id="status" class="status">Ready. The default souvenir shows the regular base stripes and centered logo only. Brown/cream voice strips appear after recording.</div>
+        <div id="status" class="status">Ready. The default preview shows the regular base stripes only. Brown/cream voice strips appear after recording.</div>
       </div>
 
       <div class="row">
@@ -165,8 +140,8 @@
         <div class="waveWrap">
           <canvas id="waveCanvas" width="720" height="216"></canvas>
           <div class="cropLabels" style="margin-top:10px"><span>Crop start: <b id="cropStartVal">0.00s</b></span><span>Crop end: <b id="cropEndVal">0.00s</b></span></div>
-          <input id="cropStart" type="hidden" min="0" max="1000" value="0" />
-          <input id="cropEnd" type="hidden" min="0" max="1000" value="1000" />
+          <input id="cropStart" type="hidden" value="0" />
+          <input id="cropEnd" type="hidden" value="1000" />
         </div>
         <div class="hint">Drag directly on the waveform to choose the crop area. Click inside the selected area to choose where replay starts.</div>
       </div>
@@ -205,13 +180,6 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { STLExporter } from 'three/addons/exporters/STLExporter.js';
-    import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
-    
-
-    const LOGO_SVG = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 238 267">
-        <path fill="#ffcc00" fill-rule="evenodd" d="M 95.398438 47.269531 L 93.542969 49.042969 C 97.457031 51.699219 98.515625 52.773438 100.703125 55.800781 C 101.914062 57.480469 104.289062 61.476562 105.707031 65.886719 C 107.910156 73.089844 107.15625 80.476562 119.445312 80.476562 C 124.191406 80.386719 128.601562 78.378906 130.707031 75.578125 C 135.144531 69.675781 135.128906 57.050781 120.773438 51.421875 C 112.375 48.125 107.636719 47.421875 95.398438 47.269531 Z M 177.015625 66.390625 C 176.378906 66.382812 175.777344 66.613281 175.273438 67.183594 L 161.828125 82.695312 L 70.035156 82.695312 C 55.339844 82.695312 44.851562 82.078125 38.160156 80.484375 L 42.394531 88.554688 C 51.917969 87.207031 61.445312 87.078125 71.195312 87.078125 L 198.410156 87.078125 C 200.503906 87.078125 200.824219 84.660156 197.546875 81.964844 L 179.507812 67.410156 C 178.714844 66.8125 177.835938 66.402344 177.015625 66.390625 Z M 175.660156 92.296875 C 156.910156 92.296875 142.484375 106.691406 131.339844 123.511719 C 126.894531 130.226562 124.613281 137.222656 122.421875 144.402344 C 116.777344 144.269531 111.234375 143.714844 106.132812 142.894531 C 105.527344 137.34375 102.910156 131.421875 99.332031 125.757812 C 89.136719 109.640625 75.023438 99.808594 68.761719 94.933594 L 66.589844 97.0625 C 74.15625 107.605469 78.011719 121.496094 80.1875 132.859375 C 82.492188 144.902344 82.175781 154.695312 86.09375 158.511719 C 89.925781 162.101562 95.578125 162.277344 100.097656 158.472656 C 104.734375 154.570312 106.472656 149.703125 106.253906 144.429688 C 107.882812 144.671875 114.222656 145.554688 121.960938 145.910156 C 121.59375 147.117188 121.226562 148.332031 120.84375 149.550781 C 117.222656 161.171875 113.046875 171.28125 108.71875 177.363281 C 81.628906 167.152344 76.550781 160.984375 59.410156 160.984375 C 48.757812 160.984375 39.566406 167.035156 39.566406 175.757812 C 39.566406 190.476562 63.378906 194.253906 72.960938 194.253906 C 91.085938 194.253906 104.183594 188.734375 113.457031 182.707031 C 113.859375 182.878906 114.261719 183.054688 114.667969 183.222656 C 128.726562 188.984375 144.117188 194.105469 161.355469 194.105469 C 186.121094 194.105469 198.886719 183.109375 198.886719 173.796875 C 198.886719 157.875 183.851562 152.683594 180.167969 151.984375 C 167.820312 149.640625 161.429688 154.410156 154.226562 164.28125 L 155.683594 165.453125 C 155.683594 165.453125 160.050781 157.109375 168.371094 154.054688 C 174.097656 151.953125 183.617188 152.597656 187.566406 158.75 C 191.753906 165.273438 188.429688 176.894531 176.890625 182.90625 C 166.386719 188.375 150.59375 189.921875 132.019531 185.085938 C 126.382812 183.617188 122.585938 182.308594 116.898438 180.328125 C 120.179688 177.925781 122.894531 175.546875 125.105469 173.5 C 134.398438 164.898438 138.65625 155.066406 142.023438 144.722656 C 159.996094 140.992188 166.511719 135.59375 174.476562 130.105469 C 188.285156 120.59375 194.277344 107.738281 190.613281 100.410156 C 188.25 95.675781 183.253906 92.296875 175.660156 92.296875 Z M 176.15625 93.835938 C 181.613281 93.753906 186.8125 95.824219 188.652344 100.070312 C 195.621094 116.1875 167.046875 134.085938 152.792969 139.832031 C 149.609375 141.113281 146.191406 142.089844 142.636719 142.808594 C 147.132812 128.503906 150.425781 113.304688 163.269531 99.058594 C 166.335938 95.65625 171.34375 93.910156 176.15625 93.835938 Z M 65.824219 167.074219 C 78.125 167.074219 91.855469 174.359375 106.511719 179.777344 C 106.582031 179.800781 106.652344 179.832031 106.726562 179.855469 C 106.617188 179.976562 106.507812 180.097656 106.398438 180.210938 C 103.21875 183.535156 93.601562 190.222656 73.839844 190.222656 C 56.648438 190.222656 51.183594 182.296875 51.183594 178.101562 C 51.183594 172.757812 57.886719 167.074219 65.824219 167.074219 Z M 65.824219 167.074219"/>
-      </svg>`;
 
     const canvas = document.querySelector('#scene');
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -219,7 +187,7 @@
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf7efe6);
+    scene.background = new THREE.Color(0xfaf7f1);
 
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -240,8 +208,7 @@
       warmWood: new THREE.MeshStandardMaterial({ color: 0x9a6653, roughness: 0.74, metalness: 0.02 }),
       paleWood: new THREE.MeshStandardMaterial({ color: 0xd7c7aa, roughness: 0.7, metalness: 0.02 }),
       black: new THREE.MeshStandardMaterial({ color: 0x202020, roughness: 0.6 }),
-      base: new THREE.MeshStandardMaterial({ color: 0x4a3228, roughness: 0.8 }),
-      logo: new THREE.MeshStandardMaterial({ color: 0xf8d000, roughness: 0.5, side: THREE.DoubleSide })
+      base: new THREE.MeshStandardMaterial({ color: 0x4a3228, roughness: 0.8 })
     };
 
     let hasRecording = false;
@@ -254,14 +221,9 @@
     let liveStream = null;
     let recordedBlob = null;
     let recordedAudioUrl = null;
-    
-    new FontLoader().load('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json', (font) => {
-      loadedFont = font;
-      buildModel();
-    });
+    const player = new Audio();
 
     const ui = {
-      
       status: document.querySelector('#status'),
       recordBtn: document.querySelector('#recordBtn'),
       stopBtn: document.querySelector('#stopBtn'),
@@ -278,8 +240,7 @@
       exportBtn: document.querySelector('#exportBtn'),
       stripeCountVal: document.querySelector('#stripeCountVal'),
       heightScaleVal: document.querySelector('#heightScaleVal'),
-      baseDepthVal: document.querySelector('#baseDepthVal'),
-      logoSizeVal: null
+      baseDepthVal: document.querySelector('#baseDepthVal')
     };
 
     window.addEventListener('error', (event) => {
@@ -290,27 +251,17 @@
       ui.stripeCountVal.textContent = ui.stripeCount.value;
       ui.heightScaleVal.textContent = Number(ui.heightScale.value).toFixed(2);
       ui.baseDepthVal.textContent = Number(ui.baseDepth.value).toFixed(2);
-      const start = cropStartSeconds();
-      const end = cropEndSeconds();
-      ui.cropStartVal.textContent = `${start.toFixed(2)}s`;
-      ui.cropEndVal.textContent = `${end.toFixed(2)}s`;
+      ui.cropStartVal.textContent = `${cropStartSeconds().toFixed(2)}s`;
+      ui.cropEndVal.textContent = `${cropEndSeconds().toFixed(2)}s`;
     }
 
-    function cropStartSeconds() {
-      return duration * Number(ui.cropStart.value) / 1000;
-    }
-
-    function cropEndSeconds() {
-      return duration * Number(ui.cropEnd.value) / 1000;
-    }
+    function cropStartSeconds() { return duration * Number(ui.cropStart.value) / 1000; }
+    function cropEndSeconds() { return duration * Number(ui.cropEnd.value) / 1000; }
 
     function clearGroup(group) {
       while (group.children.length) {
         const child = group.children.pop();
-        child.traverse?.((obj) => {
-          if (obj.geometry) obj.geometry.dispose();
-          if (obj.material?.map) obj.material.map.dispose();
-        });
+        child.traverse?.((obj) => { if (obj.geometry) obj.geometry.dispose(); });
       }
     }
 
@@ -347,14 +298,12 @@
       root.add(box(width + 0.55, maxH + 0.55, depth * 0.42, mats.base, 0, (maxH + 0.55) / 2, -depth * 0.35, 'solid_back_plate'));
       root.add(box(width + 0.85, 0.28, depth * 1.8, mats.black, 0, 0.14, depth * 0.12, 'bottom_foot'));
 
-      // Default preview: only regular long base stripes plus centered logo.
       for (let i = 0; i < count + 5; i++) {
         const x = -width / 2 - spacing * 2 + i * spacing;
         const h = maxH + 0.35;
         root.add(box(stripeW * 0.55, h, depth * 1.25, mats.darkWood, x, h / 2 + 0.18, depth * 0.18, 'regular_long_stripe'));
       }
 
-      // Brown/cream voice strips only appear after recording.
       if (hasRecording && waveform.length) {
         const palette = [mats.darkWood, mats.redWood, mats.warmWood, mats.paleWood];
         const values = resample(waveform, count);
@@ -373,50 +322,7 @@
       }
       root.add(box(width + 0.2, 0.055, depth * 1.52, mats.paleWood, 0, 1.28, depth * 0.38, 'cream_band'));
 
-      
-      
       drawWaveCanvas();
-    }
-
-    );
-          const mesh = new THREE.Mesh(geometry, mats.logo);
-          logoGroup.add(mesh);
-        }
-      }
-
-      const scale = targetW / 238;
-
-      // Back logo: upright when viewed from the back, centered on the souvenir.
-      // SVG uses top-left coordinates, so Y is flipped. X is flipped to cancel the mirror created by the back-face rotation.
-      logoGroup.scale.set(-scale, -scale, 1);
-      logoGroup.rotation.y = Math.PI;
-      logoGroup.position.set(targetW / 2, maxH * 0.53 + targetH / 2, -depth * 0.74);
-
-      root.add(logoGroup);
-    }
-
-    );
-
-      geometry.computeBoundingBox();
-      const box3 = geometry.boundingBox;
-      const textW = box3.max.x - box3.min.x;
-      const textH = box3.max.y - box3.min.y;
-
-      const maxTextW = width * 0.55;
-      const scale = textW > maxTextW ? maxTextW / textW : 1;
-
-      const mesh = new THREE.Mesh(geometry, mats.logo);
-      mesh.name = 'front_user_name';
-      mesh.scale.set(scale, scale, 1);
-
-      // Keep the front name shallow and centered; only a small relief should project outward.
-      mesh.position.set(
-        -(textW * scale) / 2,
-        maxH * 0.53 - (textH * scale) / 2,
-        depth * 0.54
-      );
-
-      root.add(mesh);
     }
 
     function resample(arr, n) {
@@ -432,17 +338,13 @@
     }
 
     function computeWaveFromCrop() {
-      if (!rawSamples.length || !duration) {
-        waveform = [];
-        return;
-      }
+      if (!rawSamples.length || !duration) { waveform = []; return; }
       let start = cropStartSeconds();
       let end = cropEndSeconds();
       if (end <= start + 0.1) end = Math.min(duration, start + 0.1);
       const startIndex = Math.floor((start / duration) * rawSamples.length);
       const endIndex = Math.max(startIndex + 1, Math.floor((end / duration) * rawSamples.length));
-      const section = rawSamples.slice(startIndex, endIndex);
-      waveform = sampleToBins(section, Number(ui.stripeCount.value));
+      waveform = sampleToBins(rawSamples.slice(startIndex, endIndex), Number(ui.stripeCount.value));
     }
 
     function sampleToBins(samples, count) {
@@ -487,25 +389,18 @@
 
     async function startRecording() {
       try {
-        if (!navigator.mediaDevices?.getUserMedia) {
-          throw new Error('Microphone recording is not available. Use HTTPS, such as GitHub Pages, and a modern browser.');
-        }
+        if (!navigator.mediaDevices?.getUserMedia) throw new Error('Microphone recording is not available. Use HTTPS, such as GitHub Pages, and a modern browser.');
         chunks = [];
         recordedBlob = null;
         hasRecording = false;
         ui.playBtn.disabled = true;
+        ui.playBtn.textContent = 'Play';
         liveStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mimeType = chooseSupportedMimeType();
         recorder = mimeType ? new MediaRecorder(liveStream, { mimeType }) : new MediaRecorder(liveStream);
 
-        recorder.ondataavailable = e => {
-          if (e.data && e.data.size) chunks.push(e.data);
-        };
-
-        recorder.onerror = event => {
-          ui.status.textContent = 'Recording error: ' + (event.error?.message || 'unknown error');
-        };
-
+        recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+        recorder.onerror = event => { ui.status.textContent = 'Recording error: ' + (event.error?.message || 'unknown error'); };
         recorder.onstop = async () => {
           try {
             recordedBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
@@ -513,16 +408,13 @@
             recordedAudioUrl = URL.createObjectURL(recordedBlob);
             player.src = recordedAudioUrl;
             ui.playBtn.disabled = false;
-            ui.cropStart.disabled = false;
-            ui.cropEnd.disabled = false;
             ui.cropStart.value = 0;
             ui.cropEnd.value = 1000;
             playStartSeconds = 0;
-
             await decodeAudio(await recordedBlob.arrayBuffer());
             hasRecording = true;
             buildModel();
-            ui.status.textContent = 'Voice captured. Use the waveform crop controls, Play the selected part, or Export STL.';
+            ui.status.textContent = 'Voice captured. Drag the waveform crop area, Play the selected part, or Export STL.';
           } catch (err) {
             ui.status.textContent = 'The voice was recorded, but waveform decoding failed. Try Chrome or Edge on HTTPS.';
             console.error(err);
@@ -565,9 +457,7 @@
       const start = Math.max(cropStartSeconds(), playStartSeconds);
       const end = cropEndSeconds();
       player.currentTime = start;
-      player.play().catch(err => {
-        ui.status.textContent = 'Playback failed: ' + err.message;
-      });
+      player.play().catch(err => { ui.status.textContent = 'Playback failed: ' + err.message; });
       const stopTimer = setInterval(() => {
         if (player.paused || player.currentTime >= end) {
           player.pause();
@@ -583,9 +473,9 @@
       const w = c.width;
       const h = c.height;
       ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = '#f4eadf';
+      ctx.fillStyle = '#f5f5f7';
       ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = '#d8c7b6';
+      ctx.strokeStyle = '#d2d2d7';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(0, h / 2);
@@ -593,7 +483,7 @@
       ctx.stroke();
 
       if (!rawSamples.length) {
-        ctx.fillStyle = '#8a7769';
+        ctx.fillStyle = '#6e6e73';
         ctx.font = '24px system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('Record audio to see the soundwave', w / 2, h / 2 + 8);
@@ -615,63 +505,21 @@
 
       const sx = Number(ui.cropStart.value) / 1000 * w;
       const ex = Number(ui.cropEnd.value) / 1000 * w;
-      ctx.fillStyle = 'rgba(255,255,255,.62)';
+      ctx.fillStyle = 'rgba(255,255,255,.68)';
       ctx.fillRect(0, 0, sx, h);
       ctx.fillRect(ex, 0, w - ex, h);
-      ctx.strokeStyle = '#ffcc00';
+      ctx.strokeStyle = '#f8d000';
       ctx.lineWidth = 5;
       ctx.strokeRect(sx, 3, Math.max(3, ex - sx), h - 6);
 
       const px = duration ? (playStartSeconds / duration) * w : sx;
-      ctx.strokeStyle = '#202020';
+      ctx.strokeStyle = '#1d1d1f';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(px, 0);
       ctx.lineTo(px, h);
       ctx.stroke();
     }
-
-    function handleCropChange(changed) {
-      let s = Number(ui.cropStart.value);
-      let e = Number(ui.cropEnd.value);
-      if (changed === 'start' && s > e - 20) s = e - 20;
-      if (changed === 'end' && e < s + 20) e = s + 20;
-      s = Math.max(0, Math.min(980, s));
-      e = Math.max(20, Math.min(1000, e));
-      ui.cropStart.value = s;
-      ui.cropEnd.value = e;
-      playStartSeconds = cropStartSeconds();
-      computeWaveFromCrop();
-      buildModel();
-    }
-
-    function download(filename, text) {
-      const blob = new Blob([text], { type: 'model/stl' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(a.href);
-    }
-
-    function exportSTL() {
-      const exporter = new STLExporter();
-      const stl = exporter.parse(root, { binary: false });
-      download('voice-wave-souvenir.stl', stl);
-      ui.status.textContent = 'STL exported. Open it in your slicer and scale to your desired souvenir size.';
-    }
-
-    
-    ui.recordBtn.addEventListener('click', startRecording);
-    ui.stopBtn.addEventListener('click', stopRecording);
-    ui.playBtn.addEventListener('click', playRecording);
-    ui.frontBtn.addEventListener('click', setFrontView);
-    ui.exportBtn.addEventListener('click', exportSTL);
-
-    ui.cropStart.addEventListener('input', () => handleCropChange('start'));
-    ui.cropEnd.addEventListener('input', () => handleCropChange('end'));
 
     let isDraggingCrop = false;
     let dragMode = 'move';
@@ -735,6 +583,30 @@
       isDraggingCrop = false;
       try { ui.waveCanvas.releasePointerCapture(event.pointerId); } catch (e) {}
     });
+
+    function download(filename, text) {
+      const blob = new Blob([text], { type: 'model/stl' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function exportSTL() {
+      const exporter = new STLExporter();
+      const stl = exporter.parse(root, { binary: false });
+      download('voice-wave-souvenir.stl', stl);
+      ui.status.textContent = 'STL exported. Open it in your slicer and scale to your desired souvenir size.';
+    }
+
+    ui.recordBtn.addEventListener('click', startRecording);
+    ui.stopBtn.addEventListener('click', stopRecording);
+    ui.playBtn.addEventListener('click', playRecording);
+    ui.frontBtn.addEventListener('click', setFrontView);
+    ui.exportBtn.addEventListener('click', exportSTL);
 
     for (const el of [ui.stripeCount, ui.heightScale, ui.baseDepth]) {
       el.addEventListener('input', () => {
