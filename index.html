@@ -159,15 +159,9 @@
         </div>
       </div>
 
-      <div class="twocol">
-        <div class="row">
-          <label for="baseDepth">Print depth: <span id="baseDepthVal">0.35</span></label>
-          <input id="baseDepth" type="range" min="0.18" max="0.8" value="0.35" step="0.01" />
-        </div>
-        <div class="row">
-          <label for="logoSize">Logo size: <span id="logoSizeVal">1.50</span></label>
-          <input id="logoSize" type="range" min="0.8" max="2.8" value="1.5" step="0.05" />
-        </div>
+      <div class="row">
+        <label for="baseDepth">Print depth: <span id="baseDepthVal">0.35</span></label>
+        <input id="baseDepth" type="range" min="0.18" max="0.8" value="0.35" step="0.01" />
       </div>
 
       <div class="twocol">
@@ -188,6 +182,7 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { STLExporter } from 'three/addons/exporters/STLExporter.js';
+    import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 
     const LOGO_SVG = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200">
@@ -257,13 +252,12 @@
       stripeCount: document.querySelector('#stripeCount'),
       heightScale: document.querySelector('#heightScale'),
       baseDepth: document.querySelector('#baseDepth'),
-      logoSize: document.querySelector('#logoSize'),
       frontBtn: document.querySelector('#frontBtn'),
       exportBtn: document.querySelector('#exportBtn'),
       stripeCountVal: document.querySelector('#stripeCountVal'),
       heightScaleVal: document.querySelector('#heightScaleVal'),
       baseDepthVal: document.querySelector('#baseDepthVal'),
-      logoSizeVal: document.querySelector('#logoSizeVal')
+      logoSizeVal: null
     };
 
     window.addEventListener('error', (event) => {
@@ -274,7 +268,6 @@
       ui.stripeCountVal.textContent = ui.stripeCount.value;
       ui.heightScaleVal.textContent = Number(ui.heightScale.value).toFixed(2);
       ui.baseDepthVal.textContent = Number(ui.baseDepth.value).toFixed(2);
-      ui.logoSizeVal.textContent = Number(ui.logoSize.value).toFixed(2);
       const start = cropStartSeconds();
       const end = cropEndSeconds();
       ui.cropStartVal.textContent = `${start.toFixed(2)}s`;
@@ -362,49 +355,35 @@
     }
 
     function buildCenteredLogo(width, maxH, depth) {
-      const logoSize = Number(ui.logoSize.value);
-      const logoGroup = imageSvgToRelief(LOGO_SVG, logoSize * 2.0, logoSize * 2.0, depth * 0.22, 66);
-      logoGroup.name = 'center_logo_relief';
-      logoGroup.position.set(-logoSize, maxH * 0.53 - logoSize, depth * 0.98);
-      root.add(logoGroup);
-    }
+      const logoSize = 3.65;
+      const targetW = logoSize;
+      const targetH = logoSize;
+      const reliefDepth = depth * 0.28;
+      const loader = new SVGLoader();
+      const svgData = loader.parse(LOGO_SVG);
+      const logoGroup = new THREE.Group();
+      logoGroup.name = 'center_logo_exact_relief';
 
-    function imageSvgToRelief(svg, targetW, targetH, reliefDepth, cells) {
-      const group = new THREE.Group();
-      const img = new Image();
-      const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-
-      // The first build may happen before the image loads. Add a simple centered gold mark immediately,
-      // then rebuild with the full pixel relief after load.
-      const placeholder = box(targetW * 0.45, targetH * 0.45, reliefDepth, mats.logo, targetW / 2, targetH / 2, 0, 'logo_placeholder');
-      placeholder.rotation.z = Math.PI / 4;
-      group.add(placeholder);
-
-      img.onload = () => {
-        group.remove(placeholder);
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = cells;
-        tempCanvas.height = cells;
-        const ctx = tempCanvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, cells, cells);
-        const data = ctx.getImageData(0, 0, cells, cells).data;
-        const cw = targetW / cells;
-        const ch = targetH / cells;
-        for (let y = 0; y < cells; y++) {
-          for (let x = 0; x < cells; x++) {
-            const idx = (y * cells + x) * 4;
-            const r = data[idx], g = data[idx + 1], b = data[idx + 2], a = data[idx + 3];
-            const isGold = a > 80 && r > 180 && g > 130 && b < 80;
-            if (isGold) {
-              const px = x * cw + cw / 2;
-              const py = (cells - y - 1) * ch + ch / 2;
-              group.add(box(cw * 0.96, ch * 0.96, reliefDepth, mats.logo, px, py, 0, 'logo_pixel_relief'));
-            }
-          }
+      for (const path of svgData.paths) {
+        const color = path.color ? new THREE.Color(path.color) : new THREE.Color(0xffcc00);
+        if (color.r > 0.95 && color.g > 0.95 && color.b > 0.95) continue;
+        const shapes = SVGLoader.createShapes(path);
+        for (const shape of shapes) {
+          const geometry = new THREE.ExtrudeGeometry(shape, {
+            depth: reliefDepth,
+            bevelEnabled: false,
+            curveSegments: 12
+          });
+          const mesh = new THREE.Mesh(geometry, mats.logo);
+          logoGroup.add(mesh);
         }
-      };
-      img.src = url;
-      return group;
+      }
+
+      const scale = targetW / 1200;
+      logoGroup.scale.set(scale, -scale, 1);
+      logoGroup.rotation.x = 0;
+      logoGroup.position.set(-targetW / 2, maxH * 0.53 + targetH / 2, depth * 0.9);
+      root.add(logoGroup);
     }
 
     function resample(arr, n) {
@@ -664,7 +643,7 @@
       drawWaveCanvas();
     });
 
-    for (const el of [ui.stripeCount, ui.heightScale, ui.baseDepth, ui.logoSize]) {
+    for (const el of [ui.stripeCount, ui.heightScale, ui.baseDepth]) {
       el.addEventListener('input', () => {
         computeWaveFromCrop();
         buildModel();
