@@ -390,7 +390,7 @@
       const loader = new SVGLoader();
       const svgData = loader.parse(LOGO_SVG);
       const logoGroup = new THREE.Group();
-      logoGroup.name = 'center_logo_exact_relief';
+      logoGroup.name = 'center_back_logo_relief';
 
       for (const path of svgData.paths) {
         const shapes = SVGLoader.createShapes(path);
@@ -406,12 +406,14 @@
       }
 
       const scale = targetW / 238;
-      // FIX: correct orientation (no vertical flip)
-      logoGroup.scale.set(scale, scale, 1);
 
-      // place on back side
-      logoGroup.rotation.y = Math.PI; 
-      logoGroup.position.set(-targetW / 2, maxH * 0.53 - targetH / 2, -depth * 0.7);
+      // Back-side relief: protrudes from the back, but reads correctly when viewed from behind.
+      // SVG y-axis is downward, so Y is flipped. X is also flipped to cancel the mirror from rotation.y.
+      logoGroup.scale.set(-scale, -scale, 1);
+      logoGroup.rotation.y = Math.PI;
+
+      // Center on the souvenir back face.
+      logoGroup.position.set(targetW / 2, maxH * 0.53 + targetH / 2, -depth * 0.7);
 
       root.add(logoGroup);
     }
@@ -420,10 +422,11 @@
       const name = (ui.userName.value || '').trim().toUpperCase();
       if (!name || !loadedFont) return;
 
+      const nameDepth = depth * 0.28; // same visual relief depth as the logo
       const geometry = new TextGeometry(name, {
         font: loadedFont,
         size: 0.42,
-        depth: depth * 0.22,
+        depth: nameDepth,
         curveSegments: 8,
         bevelEnabled: false
       });
@@ -433,20 +436,18 @@
       const textW = box3.max.x - box3.min.x;
       const textH = box3.max.y - box3.min.y;
 
-      // FIX: enforce max width + better centering
       const maxTextW = width * 0.55;
       const scale = textW > maxTextW ? maxTextW / textW : 1;
 
       const mesh = new THREE.Mesh(geometry, mats.logo);
       mesh.name = 'front_user_name';
-
       mesh.scale.set(scale, scale, 1);
 
-      // FIX: proper centering (use bounding box min offset)
+      // Keep the front name shallow and centered; only a small relief should project outward.
       mesh.position.set(
         -(textW * scale) / 2,
         maxH * 0.53 - (textH * scale) / 2,
-        depth * 1.02
+        depth * 0.86
       );
 
       root.add(mesh);
