@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Voice Wave Souvenir Generator</title>
+  <title>Hong Kong Landmark Souvenir Generator</title>
   <style>
     :root {
       --bg: #ffffff;
@@ -27,7 +27,7 @@
       gap: 8px;
     }
     h1 { margin: 0; font-size: clamp(28px, 4vw, 48px); font-weight: 600; letter-spacing: -0.02em; }
-    p { margin: 0; color: var(--muted); line-height: 1.6; max-width: 760px; font-size: 15px; }
+    p { margin: 0; color: var(--muted); line-height: 1.6; max-width: 820px; font-size: 15px; }
     main {
       display: grid;
       grid-template-columns: 390px 1fr;
@@ -98,7 +98,7 @@
       display: block;
       border-radius: 10px;
       background: #f5f5f7;
-      cursor: crosshair;
+      cursor: not-allowed;
       touch-action: none;
     }
     .cropLabels { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
@@ -119,8 +119,8 @@
 </head>
 <body>
   <header>
-    <h1>Voice Wave Souvenir Generator</h1>
-    <p>Preview a one-colour 3D-printable Hong Kong landmark souvenir. The side menu stays for future audio features, but the model now uses fixed landmark silhouettes instead of audio-generated strips.</p>
+    <h1>Hong Kong Landmark Souvenir Generator</h1>
+    <p>Preview a one-colour 3D-printable Hong Kong landmark souvenir. The audio side menu is kept for the future, but the souvenir now uses a fixed skyline made from recognisable Hong Kong landmark forms and raised detail patterns.</p>
   </header>
 
   <main>
@@ -128,11 +128,11 @@
       <div class="row">
         <label>1. Record voice</label>
         <div class="threecol">
-          <button id="recordBtn">Record</button>
+          <button id="recordBtn" disabled>Record</button>
           <button id="stopBtn" class="secondary" disabled>Stop</button>
           <button id="playBtn" class="secondary" disabled>Play</button>
         </div>
-        <div id="status" class="status">Ready. The souvenir now shows a fixed Hong Kong landmark skyline in one dark-brown material. Recording controls are kept for the next audio version.</div>
+        <div id="status" class="status">Audio-to-model conversion is paused. The preview now shows a fixed one-colour Hong Kong landmark skyline.</div>
       </div>
 
       <div class="row">
@@ -140,20 +140,18 @@
         <div class="waveWrap">
           <canvas id="waveCanvas" width="720" height="216"></canvas>
           <div class="cropLabels" style="margin-top:10px"><span>Crop start: <b id="cropStartVal">0.00s</b></span><span>Crop end: <b id="cropEndVal">0.00s</b></span></div>
-          <input id="cropStart" type="hidden" value="0" />
-          <input id="cropEnd" type="hidden" value="1000" />
         </div>
-        <div class="hint">Drag directly on the waveform to choose the crop area. Click inside the selected area to choose where replay starts.</div>
+        <div class="hint">This area is kept as a placeholder for the next audio version.</div>
       </div>
 
       <div class="twocol">
         <div class="row">
-          <label for="stripeCount">Voice strips: <span id="stripeCountVal">48</span></label>
-          <input id="stripeCount" type="range" min="20" max="90" value="48" />
+          <label for="landmarkScale">Landmark height: <span id="landmarkScaleVal">1.00</span></label>
+          <input id="landmarkScale" type="range" min="0.75" max="1.35" value="1" step="0.05" />
         </div>
         <div class="row">
-          <label for="heightScale">Wave height: <span id="heightScaleVal">1.00</span></label>
-          <input id="heightScale" type="range" min="0.4" max="1.8" value="1" step="0.05" />
+          <label for="detailDepth">Detail depth: <span id="detailDepthVal">1.00</span></label>
+          <input id="detailDepth" type="range" min="0.5" max="1.8" value="1" step="0.05" />
         </div>
       </div>
 
@@ -167,7 +165,7 @@
         <button id="exportBtn" class="export">Export STL</button>
       </div>
 
-      <div class="hint">Microphone recording requires HTTPS. It should work on GitHub Pages, but it may not work by opening the file directly from your computer.</div>
+      <div class="hint">Everything is one dark-brown material, suitable for single-colour 3D printing. Details are created as raised/stepped geometry, not colours.</div>
     </section>
 
     <section class="panel viewer">
@@ -180,7 +178,6 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { STLExporter } from 'three/addons/exporters/STLExporter.js';
-    import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 
     const canvas = document.querySelector('#scene');
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -204,42 +201,21 @@
     scene.add(root);
 
     const darkBrown = 0x3a2018;
-    const mats = {
-      dark: new THREE.MeshStandardMaterial({ color: darkBrown, roughness: 0.74, metalness: 0.02 }),
-      base: new THREE.MeshStandardMaterial({ color: darkBrown, roughness: 0.8 }),
-      logo: new THREE.MeshStandardMaterial({ color: darkBrown, roughness: 0.7 })
-    };
-
-    let hasRecording = false;
-    let rawSamples = [];
-    let duration = 0;
-    let waveform = [];
-    let playStartSeconds = 0;
-    let recorder = null;
-    let chunks = [];
-    let liveStream = null;
-    let recordedBlob = null;
-    let recordedAudioUrl = null;
-    const player = new Audio();
+    const mat = new THREE.MeshStandardMaterial({ color: darkBrown, roughness: 0.76, metalness: 0.02 });
 
     const ui = {
-      status: document.querySelector('#status'),
-      recordBtn: document.querySelector('#recordBtn'),
-      stopBtn: document.querySelector('#stopBtn'),
-      playBtn: document.querySelector('#playBtn'),
       waveCanvas: document.querySelector('#waveCanvas'),
-      cropStart: document.querySelector('#cropStart'),
-      cropEnd: document.querySelector('#cropEnd'),
       cropStartVal: document.querySelector('#cropStartVal'),
       cropEndVal: document.querySelector('#cropEndVal'),
-      stripeCount: document.querySelector('#stripeCount'),
-      heightScale: document.querySelector('#heightScale'),
+      landmarkScale: document.querySelector('#landmarkScale'),
+      detailDepth: document.querySelector('#detailDepth'),
       baseDepth: document.querySelector('#baseDepth'),
+      landmarkScaleVal: document.querySelector('#landmarkScaleVal'),
+      detailDepthVal: document.querySelector('#detailDepthVal'),
+      baseDepthVal: document.querySelector('#baseDepthVal'),
       frontBtn: document.querySelector('#frontBtn'),
       exportBtn: document.querySelector('#exportBtn'),
-      stripeCountVal: document.querySelector('#stripeCountVal'),
-      heightScaleVal: document.querySelector('#heightScaleVal'),
-      baseDepthVal: document.querySelector('#baseDepthVal')
+      status: document.querySelector('#status')
     };
 
     window.addEventListener('error', (event) => {
@@ -247,15 +223,12 @@
     });
 
     function updateLabels() {
-      ui.stripeCountVal.textContent = ui.stripeCount.value;
-      ui.heightScaleVal.textContent = Number(ui.heightScale.value).toFixed(2);
+      ui.landmarkScaleVal.textContent = Number(ui.landmarkScale.value).toFixed(2);
+      ui.detailDepthVal.textContent = Number(ui.detailDepth.value).toFixed(2);
       ui.baseDepthVal.textContent = Number(ui.baseDepth.value).toFixed(2);
-      ui.cropStartVal.textContent = `${cropStartSeconds().toFixed(2)}s`;
-      ui.cropEndVal.textContent = `${cropEndSeconds().toFixed(2)}s`;
+      ui.cropStartVal.textContent = '0.00s';
+      ui.cropEndVal.textContent = '0.00s';
     }
-
-    function cropStartSeconds() { return duration * Number(ui.cropStart.value) / 1000; }
-    function cropEndSeconds() { return duration * Number(ui.cropEnd.value) / 1000; }
 
     function clearGroup(group) {
       while (group.children.length) {
@@ -264,7 +237,7 @@
       }
     }
 
-    function box(w, h, d, mat, x, y, z, name = '') {
+    function box(w, h, d, x, y, z, name = '') {
       const geo = new THREE.BoxGeometry(w, h, d);
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(x, y, z);
@@ -280,327 +253,147 @@
       controls.update();
     }
 
-    function buildModel() {
-      // add back logo later
+    function addDetail(group, w, h, x, y, depth, name = 'raised_detail') {
+      const detailScale = Number(ui.detailDepth.value);
+      group.add(box(w, h, depth * 0.28 * detailScale, x, y, depth * 1.06, name));
+    }
 
+    function addSpire(group, x, y, h, depth, name) {
+      group.add(box(0.045, h, depth * 0.75, x, y + h / 2, depth * 0.58, name));
+    }
+
+    function addLandmarkLabel(group, textBlocks, x, y, w, depth) {
+      // Abstract tiny block lettering/glyphs for recognisability while remaining STL-safe.
+      const gap = w * 0.08;
+      const blockW = w * 0.09;
+      const blockH = 0.055;
+      const total = textBlocks.length * blockW + (textBlocks.length - 1) * gap;
+      let start = x - total / 2 + blockW / 2;
+      textBlocks.forEach((_, i) => addDetail(group, blockW, blockH, start + i * (blockW + gap), y, depth, 'landmark_micro_mark'));
+    }
+
+    function addLegCo(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 1.25, h * 0.58, d, x, baseY + h * 0.29, depth * 0.35, 'legco_body'));
+      group.add(box(w * 1.55, h * 0.09, d, x, baseY + h * 0.63, depth * 0.35, 'legco_roof_band'));
+      group.add(box(w * 0.78, h * 0.12, d, x, baseY + h * 0.73, depth * 0.35, 'legco_pediment'));
+      group.add(box(w * 0.22, h * 0.12, d, x, baseY + h * 0.86, depth * 0.35, 'legco_center_crown'));
+      for (let i = -3; i <= 3; i++) addDetail(group, w * 0.035, h * 0.38, x + i * w * 0.16, baseY + h * 0.31, depth, 'legco_columns');
+      addLandmarkLabel(group, ['L','C'], x, baseY + h * 0.13, w, depth);
+    }
+
+    function addIFC(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 0.65, h * 0.9, d, x, baseY + h * 0.45, depth * 0.35, 'ifc_tall_body'));
+      group.add(box(w * 0.48, h * 0.08, d, x, baseY + h * 0.94, depth * 0.35, 'ifc_cap'));
+      addSpire(group, x, baseY + h * 0.96, h * 0.13, depth, 'ifc_spire'));
+      for (let i = -2; i <= 2; i++) addDetail(group, w * 0.025, h * 0.72, x + i * w * 0.1, baseY + h * 0.48, depth, 'ifc_vertical_ribs');
+      for (let i = 1; i <= 5; i++) addDetail(group, w * 0.52, 0.035, x, baseY + h * (0.18 + i * 0.12), depth, 'ifc_floor_lines');
+    }
+
+    function addICC(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 0.8, h * 0.82, d, x, baseY + h * 0.41, depth * 0.35, 'icc_main_tower'));
+      group.add(box(w * 0.58, h * 0.13, d, x, baseY + h * 0.88, depth * 0.35, 'icc_upper_step'));
+      group.add(box(w * 0.36, h * 0.06, d, x, baseY + h * 0.99, depth * 0.35, 'icc_top'));
+      for (let i = -3; i <= 3; i++) addDetail(group, w * 0.022, h * 0.72, x + i * w * 0.085, baseY + h * 0.44, depth, 'icc_ribs');
+      addDetail(group, w * 0.68, 0.04, x, baseY + h * 0.77, depth, 'icc_sky_lobby_band');
+    }
+
+    function addBOC(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 1.05, h * 0.28, d, x, baseY + h * 0.14, depth * 0.35, 'boc_lower'));
+      group.add(box(w * 0.82, h * 0.28, d, x, baseY + h * 0.42, depth * 0.35, 'boc_middle'));
+      group.add(box(w * 0.58, h * 0.26, d, x, baseY + h * 0.69, depth * 0.35, 'boc_upper'));
+      group.add(box(w * 0.25, h * 0.18, d, x, baseY + h * 0.91, depth * 0.35, 'boc_tip'));
+      // Raised diagonal X pattern using thin rotated bars.
+      const diag1 = box(w * 1.05, 0.045, depth * 0.28 * Number(ui.detailDepth.value), x, baseY + h * 0.48, depth * 1.07, 'boc_diagonal_a');
+      diag1.rotation.z = Math.PI / 4;
+      const diag2 = box(w * 1.05, 0.045, depth * 0.28 * Number(ui.detailDepth.value), x, baseY + h * 0.48, depth * 1.08, 'boc_diagonal_b');
+      diag2.rotation.z = -Math.PI / 4;
+      group.add(diag1, diag2);
+    }
+
+    function addHSBC(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 1.28, h * 0.72, d, x, baseY + h * 0.36, depth * 0.35, 'hsbc_frame'));
+      group.add(box(w * 1.5, h * 0.11, d, x, baseY + h * 0.79, depth * 0.35, 'hsbc_top_truss'));
+      group.add(box(w * 1.42, h * 0.11, d, x, baseY + h * 0.08, depth * 0.35, 'hsbc_base_truss'));
+      for (let i = -2; i <= 2; i++) addDetail(group, w * 0.055, h * 0.62, x + i * w * 0.22, baseY + h * 0.38, depth, 'hsbc_vertical_structure');
+      for (let i = 1; i <= 4; i++) addDetail(group, w * 1.18, 0.04, x, baseY + h * (0.15 + i * 0.13), depth, 'hsbc_horizontal_structure');
+    }
+
+    function addCentralPlaza(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 0.9, h * 0.78, d, x, baseY + h * 0.39, depth * 0.35, 'central_plaza_body'));
+      group.add(box(w * 0.48, h * 0.08, d, x, baseY + h * 0.84, depth * 0.35, 'central_plaza_cap'));
+      addSpire(group, x, baseY + h * 0.86, h * 0.2, depth, 'central_plaza_spire');
+      for (let i = 1; i <= 6; i++) addDetail(group, w * 0.72, 0.032, x, baseY + h * (0.13 + i * 0.1), depth, 'central_plaza_floor_lines');
+    }
+
+    function addJunkBoat(group, x, h, w, depth) {
+      const baseY = 0.32;
+      const d = depth * 1.45;
+      group.add(box(w * 1.45, h * 0.16, d, x, baseY + h * 0.12, depth * 0.35, 'junk_boat_hull'));
+      group.add(box(w * 0.08, h * 0.65, d, x, baseY + h * 0.45, depth * 0.35, 'junk_boat_mast'));
+      const sailA = box(w * 0.58, h * 0.08, d, x - w * 0.22, baseY + h * 0.55, depth * 0.35, 'junk_boat_sail_a');
+      sailA.rotation.z = -0.55;
+      const sailB = box(w * 0.52, h * 0.08, d, x + w * 0.23, baseY + h * 0.48, depth * 0.35, 'junk_boat_sail_b');
+      sailB.rotation.z = 0.55;
+      group.add(sailA, sailB);
+      addDetail(group, w * 1.35, 0.035, x, baseY + h * 0.22, depth, 'junk_boat_deck_line');
+    }
+
+    function buildModel() {
       updateLabels();
       clearGroup(root);
 
-      const count = Number(ui.stripeCount.value);
-      const width = 9.2;
+      const width = 9.4;
       const maxH = 5.8;
-      const minH = 1.1;
       const depth = Number(ui.baseDepth.value);
-      const scale = Number(ui.heightScale.value);
-      const spacing = width / count;
-      const stripeW = Math.max(0.055, spacing * 0.35);
-      const voiceStripeW = Math.max(0.085, spacing * 0.58);
+      const landmarkScale = Number(ui.landmarkScale.value);
 
-      root.add(box(width + 0.55, maxH + 0.55, depth * 0.42, mats.base, 0, (maxH + 0.55) / 2, -depth * 0.35, 'solid_back_plate'));
-      root.add(box(width + 0.85, 0.28, depth * 1.8, mats.dark, 0, 0.14, depth * 0.12, 'bottom_foot'));
+      root.add(box(width + 0.55, maxH + 0.55, depth * 0.42, 0, (maxH + 0.55) / 2, -depth * 0.35, 'solid_back_plate'));
+      root.add(box(width + 0.85, 0.28, depth * 1.8, 0, 0.14, depth * 0.12, 'bottom_foot'));
 
-      for (let i = 0; i < count + 5; i++) {
-        const x = -width / 2 - spacing * 2 + i * spacing;
-        const h = maxH + 0.35;
-        root.add(box(stripeW * 0.55, h, depth * 1.25, mats.dark, x, h / 2 + 0.18, depth * 0.18, 'regular_long_stripe'));
+      // Regular background facade rhythm, still visible behind the landmarks.
+      const rhythmCount = 58;
+      const rhythmSpacing = width / rhythmCount;
+      const rhythmW = rhythmSpacing * 0.22;
+      for (let i = 0; i < rhythmCount + 4; i++) {
+        const x = -width / 2 - rhythmSpacing * 2 + i * rhythmSpacing;
+        root.add(box(rhythmW, maxH + 0.35, depth * 1.05, x, (maxH + 0.35) / 2 + 0.18, depth * 0.12, 'background_facade_rhythm'));
       }
 
-      // Fixed Hong Kong landmark skyline. Not driven by audio for now.
+      // Fixed Hong Kong landmark sequence.
       const skyline = [
-        { type: 0, h: 3.3 }, // Legislative Council
-        { type: 1, h: 5.5 }, // IFC
-        { type: 3, h: 4.9 }, // Bank of China Tower
-        { type: 4, h: 3.8 }, // HSBC
-        { type: 2, h: 5.8 }, // ICC
-        { type: 5, h: 4.2 }, // Central Plaza / generic spire tower
-        { type: 6, h: 3.6 }  // harbour mid-rise cluster
+        { fn: addLegCo, h: 3.2, w: 1.08 },
+        { fn: addIFC, h: 5.55, w: 0.92 },
+        { fn: addBOC, h: 5.0, w: 1.0 },
+        { fn: addHSBC, h: 3.9, w: 1.15 },
+        { fn: addICC, h: 5.8, w: 0.96 },
+        { fn: addCentralPlaza, h: 4.6, w: 0.94 },
+        { fn: addJunkBoat, h: 2.7, w: 1.12 }
       ];
-      const landmarkCount = skyline.length;
-      const landmarkSpacing = width / landmarkCount;
-      const landmarkW = landmarkSpacing * 0.56;
-      for (let i = 0; i < landmarkCount; i++) {
-        const x = -width / 2 + landmarkSpacing / 2 + i * landmarkSpacing;
-        addHongKongLandmark(root, skyline[i].type, x, skyline[i].h, landmarkW, depth);
-      }
-
-      for (const y of [1.45, 1.68, 1.92]) {
-        root.add(box(width + 0.35, 0.055, depth * 1.55, mats.dark, 0, y, depth * 0.36, 'horizontal_band'));
-      }
-      root.add(box(width + 0.2, 0.055, depth * 1.52, mats.dark, 0, 1.28, depth * 0.38, 'lower_detail_band'));
-
-      buildBackLogo();
-      drawWaveCanvas();
-    }
-
-    function buildBackLogo() {
-      const loader = new SVGLoader();
-      const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 200">
-  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Helvetica, Arial" font-size="140" fill="#f8d000">LEGCO</text>
-</svg>`;
-
-      const data = loader.parse(svg);
-      const group = new THREE.Group();
-
-      data.paths.forEach(path => {
-        const shapes = SVGLoader.createShapes(path);
-        shapes.forEach(shape => {
-          const geo = new THREE.ExtrudeGeometry(shape, {
-            depth: 0.08,
-            bevelEnabled: false
-          });
-          const mesh = new THREE.Mesh(geo, mats.logo);
-          group.add(mesh);
-        });
+      const spacing = width / skyline.length;
+      skyline.forEach((item, i) => {
+        const x = -width / 2 + spacing / 2 + i * spacing;
+        item.fn(root, x, item.h * landmarkScale, spacing * item.w * 0.58, depth);
       });
 
-      // scale UP so it is visible
-      group.scale.set(0.02, -0.02, 1);
-
-      // rotate to face backward correctly
-      group.rotation.y = Math.PI;
-
-      // IMPORTANT: place slightly OUTSIDE the back surface so it's visible
-      group.position.set(0, 3, -0.25);
-
-      root.add(group);
-    }
-
-    function addDetail(group, x, y, w, h, depth, name = 'detail') {
-      group.add(box(w, h, depth * 1.72, mats.dark, x, y, depth * 0.72, name));
-    }
-
-    function addDetail(group, x, y, w, h, depth) {
-  const geo = new THREE.BoxGeometry(w, h, depth * 1.7);
-  const mesh = new THREE.Mesh(geo, mats.dark);
-  mesh.position.set(x, y, depth * 0.7);
-  group.add(mesh);
-}
-
-function addHongKongLandmark(group, type, x, h, w, depth) {
-  const z = depth * 0.35;
-  const d = depth * 1.55;
-  const baseY = 0.32;
-  const bodyH = Math.max(0.35, h);
-
-  const addBox = (bw, bh, by) => {
-    const geo = new THREE.BoxGeometry(bw, bh, d);
-    const mesh = new THREE.Mesh(geo, mats.dark);
-    mesh.position.set(x, by, z);
-    group.add(mesh);
-  };
-
-  if (type === 0) {
-    addBox(w * 0.7, bodyH, baseY + bodyH / 2);
-  } else if (type === 1) {
-    addBox(w * 0.35, bodyH * 0.75, baseY + bodyH * 0.38);
-    addBox(w * 0.55, bodyH * 0.15, baseY + bodyH * 0.78);
-  } else if (type === 2) {
-    addBox(w, bodyH, baseY + bodyH / 2);
-  } else if (type === 3) {
-    addBox(w * 1.1, bodyH * 0.3, baseY + bodyH * 0.15);
-    addBox(w * 0.8, bodyH * 0.3, baseY + bodyH * 0.45);
-    addBox(w * 0.55, bodyH * 0.25, baseY + bodyH * 0.72);
-  } else if (type === 4) {
-    addBox(w * 0.75, bodyH, baseY + bodyH / 2);
-  } else if (type === 5) {
-    addBox(w * 1.5, bodyH * 0.35, baseY + bodyH * 0.18);
-  } else {
-    addBox(w * 1.2, bodyH * 0.25, baseY + bodyH * 0.12);
-    addBox(w * 0.6, bodyH * 0.4, baseY + bodyH * 0.45);
-  }
-}
-  }
-
-  else if (type === 1) {
-    // Clock Tower – thin shaft + dome + spike
-    group.add(box(w * 0.35, bodyH * 0.75, d, mats.dark, x, baseY + bodyH * 0.38, z));
-    group.add(box(w * 0.55, bodyH * 0.15, d, mats.dark, x, baseY + bodyH * 0.78, z));
-    group.add(box(w * 0.15, bodyH * 0.25, d, mats.dark, x, baseY + bodyH * 0.95, z));
-  }
-
-  else if (type === 2) {
-    // HSBC – exposed structure feel (vertical + horizontal grid)
-    group.add(box(w, bodyH, d, mats.dark, x, baseY + bodyH / 2, z));
-    for (let i = -2; i <= 2; i++) {
-      addDetail(group, x + i * w * 0.2, baseY + bodyH / 2, w * 0.04, bodyH * 0.9, depth);
-    }
-    for (let i = 1; i < 6; i++) {
-      addDetail(group, x, baseY + bodyH * (i / 6), w * 0.9, bodyH * 0.02, depth);
-    }
-  }
-
-  else if (type === 3) {
-    // Bank of China – triangular geometry (stacked taper blocks)
-    group.add(box(w * 1.1, bodyH * 0.3, d, mats.dark, x, baseY + bodyH * 0.15, z));
-    group.add(box(w * 0.8, bodyH * 0.3, d, mats.dark, x, baseY + bodyH * 0.45, z));
-    group.add(box(w * 0.55, bodyH * 0.25, d, mats.dark, x, baseY + bodyH * 0.72, z));
-    group.add(box(w * 0.25, bodyH * 0.2, d, mats.dark, x, baseY + bodyH * 0.95, z));
-  }
-
-  else if (type === 4) {
-    // IFC – smooth tower with vertical ribs
-    group.add(box(w * 0.75, bodyH, d, mats.dark, x, baseY + bodyH / 2, z));
-    for (let i = -2; i <= 2; i++) {
-      addDetail(group, x + i * w * 0.15, baseY + bodyH / 2, w * 0.03, bodyH * 0.9, depth);
-    }
-  }
-
-  else if (type === 5) {
-    // Cultural Centre – curved roof suggestion (stacked layers)
-    group.add(box(w * 1.5, bodyH * 0.35, d, mats.dark, x, baseY + bodyH * 0.18, z));
-    group.add(box(w * 1.2, bodyH * 0.2, d, mats.dark, x, baseY + bodyH * 0.45, z));
-    group.add(box(w * 0.8, bodyH * 0.15, d, mats.dark, x, baseY + bodyH * 0.65, z));
-  }
-
-  else {
-    // Tian Tan Buddha – base + seated form abstraction
-    group.add(box(w * 1.2, bodyH * 0.25, d, mats.dark, x, baseY + bodyH * 0.12, z));
-    group.add(box(w * 0.6, bodyH * 0.4, d, mats.dark, x, baseY + bodyH * 0.45, z));
-    group.add(box(w * 0.4, bodyH * 0.25, d, mats.dark, x, baseY + bodyH * 0.8, z));
-  }
-}
-
-    function resample(arr, n) {
-      if (!arr.length) return Array.from({ length: n }, () => 0);
-      const out = [];
-      for (let i = 0; i < n; i++) {
-        const pos = i * (arr.length - 1) / Math.max(1, n - 1);
-        const lo = Math.floor(pos), hi = Math.min(arr.length - 1, lo + 1);
-        const t = pos - lo;
-        out.push(arr[lo] * (1 - t) + arr[hi] * t);
+      // Lower bands inspired by the original souvenir base.
+      for (const y of [1.45, 1.68, 1.92]) {
+        root.add(box(width + 0.35, 0.055, depth * 1.55, 0, y, depth * 0.36, 'horizontal_band'));
       }
-      return out;
-    }
+      root.add(box(width + 0.2, 0.055, depth * 1.52, 0, 1.28, depth * 0.38, 'lower_detail_band'));
 
-    function computeWaveFromCrop() {
-      if (!rawSamples.length || !duration) { waveform = []; return; }
-      let start = cropStartSeconds();
-      let end = cropEndSeconds();
-      if (end <= start + 0.1) end = Math.min(duration, start + 0.1);
-      const startIndex = Math.floor((start / duration) * rawSamples.length);
-      const endIndex = Math.max(startIndex + 1, Math.floor((end / duration) * rawSamples.length));
-      waveform = sampleToBins(rawSamples.slice(startIndex, endIndex), Number(ui.stripeCount.value));
-    }
-
-    function sampleToBins(samples, count) {
-      const samplesPerBin = Math.max(1, Math.floor(samples.length / count));
-      const values = [];
-      for (let i = 0; i < count; i++) {
-        const start = i * samplesPerBin;
-        const end = i === count - 1 ? samples.length : Math.min(samples.length, start + samplesPerBin);
-        let sum = 0;
-        for (let j = start; j < end; j++) sum += samples[j] * samples[j];
-        values.push(Math.sqrt(sum / Math.max(1, end - start)));
-      }
-      const max = Math.max(...values, 0.00001);
-      let normalized = values.map(v => Math.pow(v / max, 0.68));
-      normalized = smooth(normalized, 2);
-      return normalized.map(v => Math.max(0.06, Math.min(1, v)));
-    }
-
-    async function decodeAudio(arrayBuffer) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) throw new Error('This browser does not support Web Audio.');
-      const audioCtx = new AudioCtx();
-      const buffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
-      duration = buffer.duration;
-      rawSamples = Array.from(buffer.getChannelData(0));
-      await audioCtx.close?.();
-      computeWaveFromCrop();
-    }
-
-    function smooth(arr, passes = 1) {
-      let out = arr.slice();
-      for (let p = 0; p < passes; p++) {
-        out = out.map((v, i) => (v + (out[i - 1] ?? v) + (out[i + 1] ?? v)) / 3);
-      }
-      return out;
-    }
-
-    function chooseSupportedMimeType() {
-      const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
-      return types.find(type => window.MediaRecorder && MediaRecorder.isTypeSupported(type)) || '';
-    }
-
-    async function startRecording() {
-      try {
-        if (!navigator.mediaDevices?.getUserMedia) throw new Error('Microphone recording is not available. Use HTTPS, such as GitHub Pages, and a modern browser.');
-        chunks = [];
-        recordedBlob = null;
-        hasRecording = false;
-        ui.playBtn.disabled = true;
-        ui.playBtn.textContent = 'Play';
-        liveStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mimeType = chooseSupportedMimeType();
-        recorder = mimeType ? new MediaRecorder(liveStream, { mimeType }) : new MediaRecorder(liveStream);
-
-        recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
-        recorder.onerror = event => { ui.status.textContent = 'Recording error: ' + (event.error?.message || 'unknown error'); };
-        recorder.onstop = async () => {
-          try {
-            recordedBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
-            if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
-            recordedAudioUrl = URL.createObjectURL(recordedBlob);
-            player.src = recordedAudioUrl;
-            ui.playBtn.disabled = false;
-            ui.cropStart.value = 0;
-            ui.cropEnd.value = 1000;
-            playStartSeconds = 0;
-            await decodeAudio(await recordedBlob.arrayBuffer());
-            hasRecording = true;
-            buildModel();
-            ui.status.textContent = 'Voice captured. Drag the waveform crop area, Play the selected part, or Export STL.';
-          } catch (err) {
-            ui.status.textContent = 'The voice was recorded, but waveform decoding failed. Try Chrome or Edge on HTTPS.';
-            console.error(err);
-          } finally {
-            liveStream?.getTracks().forEach(t => t.stop());
-            liveStream = null;
-            ui.recordBtn.disabled = false;
-            ui.stopBtn.disabled = true;
-          }
-        };
-
-        recorder.start();
-        ui.recordBtn.disabled = true;
-        ui.stopBtn.disabled = false;
-        ui.status.textContent = 'Recording... speak clearly, then click Stop.';
-        buildModel();
-      } catch (err) {
-        ui.status.textContent = err.message || 'Microphone permission failed. Make sure the page is served over HTTPS and microphone access is allowed.';
-        ui.recordBtn.disabled = false;
-        ui.stopBtn.disabled = true;
-        console.error(err);
-      }
-    }
-
-    function stopRecording() {
-      if (recorder && recorder.state !== 'inactive') {
-        recorder.stop();
-        ui.status.textContent = 'Processing recording...';
-      }
-    }
-
-    function playRecording() {
-      if (!recordedAudioUrl) return;
-      if (!player.paused) {
-        player.pause();
-        ui.playBtn.textContent = 'Play';
-        return;
-      }
-      ui.playBtn.textContent = 'Pause';
-      const start = Math.max(cropStartSeconds(), playStartSeconds);
-      const end = cropEndSeconds();
-      player.currentTime = start;
-      player.play().catch(err => { ui.status.textContent = 'Playback failed: ' + err.message; });
-      const stopTimer = setInterval(() => {
-        if (player.paused || player.currentTime >= end) {
-          player.pause();
-          ui.playBtn.textContent = 'Play';
-          clearInterval(stopTimer);
-        }
-      }, 30);
+      drawWaveCanvas();
     }
 
     function drawWaveCanvas() {
@@ -617,108 +410,11 @@ function addHongKongLandmark(group, type, x, h, w, depth) {
       ctx.moveTo(0, h / 2);
       ctx.lineTo(w, h / 2);
       ctx.stroke();
-
-      if (!rawSamples.length) {
-        ctx.fillStyle = '#6e6e73';
-        ctx.font = '24px system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Record audio to see the soundwave', w / 2, h / 2 + 8);
-        return;
-      }
-
-      const bars = Math.min(360, w);
-      const per = Math.max(1, Math.floor(rawSamples.length / bars));
-      ctx.fillStyle = '#7a3f2d';
-      for (let i = 0; i < bars; i++) {
-        let peak = 0;
-        const start = i * per;
-        const end = Math.min(rawSamples.length, start + per);
-        for (let j = start; j < end; j++) peak = Math.max(peak, Math.abs(rawSamples[j]));
-        const barH = Math.max(2, peak * h * 0.82);
-        const x = i * w / bars;
-        ctx.fillRect(x, h / 2 - barH / 2, Math.max(1, w / bars - 1), barH);
-      }
-
-      const sx = Number(ui.cropStart.value) / 1000 * w;
-      const ex = Number(ui.cropEnd.value) / 1000 * w;
-      ctx.fillStyle = 'rgba(255,255,255,.68)';
-      ctx.fillRect(0, 0, sx, h);
-      ctx.fillRect(ex, 0, w - ex, h);
-      ctx.strokeStyle = '#f8d000';
-      ctx.lineWidth = 5;
-      ctx.strokeRect(sx, 3, Math.max(3, ex - sx), h - 6);
-
-      const px = duration ? (playStartSeconds / duration) * w : sx;
-      ctx.strokeStyle = '#1d1d1f';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(px, 0);
-      ctx.lineTo(px, h);
-      ctx.stroke();
+      ctx.fillStyle = '#6e6e73';
+      ctx.font = '24px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Audio waveform placeholder', w / 2, h / 2 + 8);
     }
-
-    let isDraggingCrop = false;
-    let dragMode = 'move';
-    let dragOffset = 0;
-
-    function pointerRatio(event) {
-      const rect = ui.waveCanvas.getBoundingClientRect();
-      return Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-    }
-
-    function setCropFromRatios(start, end) {
-      start = Math.max(0, Math.min(0.98, start));
-      end = Math.max(0.02, Math.min(1, end));
-      if (end - start < 0.02) {
-        if (dragMode === 'start') start = end - 0.02;
-        else end = start + 0.02;
-      }
-      ui.cropStart.value = Math.round(start * 1000);
-      ui.cropEnd.value = Math.round(end * 1000);
-      playStartSeconds = cropStartSeconds();
-      computeWaveFromCrop();
-      buildModel();
-    }
-
-    ui.waveCanvas.addEventListener('pointerdown', (event) => {
-      if (!duration) return;
-      ui.waveCanvas.setPointerCapture(event.pointerId);
-      const r = pointerRatio(event);
-      const s = Number(ui.cropStart.value) / 1000;
-      const e = Number(ui.cropEnd.value) / 1000;
-      const edge = 0.035;
-      isDraggingCrop = true;
-      if (Math.abs(r - s) < edge) dragMode = 'start';
-      else if (Math.abs(r - e) < edge) dragMode = 'end';
-      else if (r > s && r < e) {
-        dragMode = 'move';
-        dragOffset = r - s;
-        playStartSeconds = r * duration;
-        drawWaveCanvas();
-      } else {
-        dragMode = 'end';
-        setCropFromRatios(Math.min(s, r), Math.max(s, r));
-      }
-    });
-
-    ui.waveCanvas.addEventListener('pointermove', (event) => {
-      if (!isDraggingCrop || !duration) return;
-      const r = pointerRatio(event);
-      const s = Number(ui.cropStart.value) / 1000;
-      const e = Number(ui.cropEnd.value) / 1000;
-      const len = e - s;
-      if (dragMode === 'start') setCropFromRatios(r, e);
-      else if (dragMode === 'end') setCropFromRatios(s, r);
-      else {
-        const ns = Math.max(0, Math.min(1 - len, r - dragOffset));
-        setCropFromRatios(ns, ns + len);
-      }
-    });
-
-    ui.waveCanvas.addEventListener('pointerup', (event) => {
-      isDraggingCrop = false;
-      try { ui.waveCanvas.releasePointerCapture(event.pointerId); } catch (e) {}
-    });
 
     function download(filename, text) {
       const blob = new Blob([text], { type: 'model/stl' });
@@ -734,21 +430,14 @@ function addHongKongLandmark(group, type, x, h, w, depth) {
     function exportSTL() {
       const exporter = new STLExporter();
       const stl = exporter.parse(root, { binary: false });
-      download('voice-wave-souvenir.stl', stl);
-      ui.status.textContent = 'STL exported. Open it in your slicer and scale to your desired souvenir size.';
+      download('hong-kong-landmark-souvenir.stl', stl);
+      ui.status.textContent = 'STL exported. Open it in your slicer and print in one dark-brown material.';
     }
 
-    ui.recordBtn.addEventListener('click', startRecording);
-    ui.stopBtn.addEventListener('click', stopRecording);
-    ui.playBtn.addEventListener('click', playRecording);
     ui.frontBtn.addEventListener('click', setFrontView);
     ui.exportBtn.addEventListener('click', exportSTL);
-
-    for (const el of [ui.stripeCount, ui.heightScale, ui.baseDepth]) {
-      el.addEventListener('input', () => {
-        computeWaveFromCrop();
-        buildModel();
-      });
+    for (const el of [ui.landmarkScale, ui.detailDepth, ui.baseDepth]) {
+      el.addEventListener('input', buildModel);
     }
 
     function resize() {
