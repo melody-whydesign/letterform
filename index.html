@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Layered Letter Audio Color Ornament</title>
+  <title>Contour Ribbon Letter Generator</title>
 
   <style>
     :root{
@@ -22,7 +22,7 @@
     *{box-sizing:border-box}
     html,body{margin:0;padding:0;height:100%}
     body{
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       background:var(--yellow);
       color:var(--ink);
     }
@@ -138,9 +138,7 @@
       color:var(--ink);
     }
 
-    input[type="range"]{
-      width:100%;
-    }
+    input[type="range"]{ width:100%; }
 
     .btn{
       width:100%;
@@ -258,8 +256,8 @@
   <div class="app">
     <aside class="sidebar">
       <div class="tabs">
-        <button class="tab active">Create layered letter</button>
-        <button class="tab">Pitch → color mapping</button>
+        <button class="tab active">Create contour letter</button>
+        <button class="tab">Pitch → brightness</button>
       </div>
 
       <h1>Create Letter</h1>
@@ -309,38 +307,38 @@
       <label for="heightRange">Letter height <span id="heightValue" class="v">7.0 cm</span></label>
       <input id="heightRange" type="range" min="4" max="12" step="0.5" value="7" />
 
-      <label for="layersRange">Number of layers <span id="layersValue" class="v">9</span></label>
-      <input id="layersRange" type="range" min="4" max="18" step="1" value="9" />
+      <label for="layersRange">Number of contour bands <span id="layersValue" class="v">8</span></label>
+      <input id="layersRange" type="range" min="3" max="14" step="1" value="8" />
 
-      <label for="depthRange">Layer thickness <span id="depthValue" class="v">0.18 cm</span></label>
-      <input id="depthRange" type="range" min="0.08" max="0.50" step="0.01" value="0.18" />
+      <label for="depthRange">Band depth <span id="depthValue" class="v">0.20 cm</span></label>
+      <input id="depthRange" type="range" min="0.08" max="0.50" step="0.01" value="0.20" />
 
-      <label for="offsetXRange">X offset per layer <span id="offsetXValue" class="v">0.22 cm</span></label>
-      <input id="offsetXRange" type="range" min="0.00" max="0.60" step="0.01" value="0.22" />
+      <label for="bandWidthRange">Band width <span id="bandWidthValue" class="v">5.5%</span></label>
+      <input id="bandWidthRange" type="range" min="2.0" max="12.0" step="0.1" value="5.5" />
 
-      <label for="offsetYRange">Y offset per layer <span id="offsetYValue" class="v">0.18 cm</span></label>
-      <input id="offsetYRange" type="range" min="0.00" max="0.60" step="0.01" value="0.18" />
+      <label for="stepScaleRange">Band spacing / growth <span id="stepScaleValue" class="v">4.2%</span></label>
+      <input id="stepScaleRange" type="range" min="1.0" max="10.0" step="0.1" value="4.2" />
 
-      <label for="scaleStepRange">Scale spread <span id="scaleStepValue" class="v">2.2%</span></label>
-      <input id="scaleStepRange" type="range" min="0.0" max="6.0" step="0.1" value="2.2" />
+      <label for="zGapRange">Gap between bands <span id="zGapValue" class="v">0.08 cm</span></label>
+      <input id="zGapRange" type="range" min="0.00" max="0.25" step="0.01" value="0.08" />
 
       <button id="generateBtn" class="btn btn-blue">Generate 3D Letter</button>
       <button id="downloadBtn" class="btn btn-dark">Download STL</button>
       <button id="resetBtn" class="btn btn-gray">Reset</button>
 
       <div id="status" class="status">
-        This version uses a layered ribbon-style letter. Recorded audio changes layer color brightness based on pitch.
+        This version builds the letter from contour ribbon bands, much closer to your reference image two.
       </div>
 
       <div class="mini">
-        Higher pitch = lighter layer. Lower pitch = darker layer.
-        <br />
+        Higher pitch = lighter band. Lower pitch = darker band.
+        <br>
         Microphone recording requires <strong>HTTPS</strong> (GitHub Pages) or <strong>localhost</strong>.
       </div>
     </aside>
 
     <main class="viewer-wrap">
-      <div class="viewer-pill">Drag to rotate 360° • Pitch controls brightness</div>
+      <div class="viewer-pill">Drag to rotate 360° • Contour ribbon bands</div>
       <canvas id="viewer"></canvas>
     </main>
   </div>
@@ -360,6 +358,7 @@
     import { FontLoader } from "three/addons/loaders/FontLoader.js";
     import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
     import { STLExporter } from "three/addons/exporters/STLExporter.js";
+    import { Evaluator, Brush, SUBTRACTION } from "https://unpkg.com/three-bvh-csg@0.0.16/build/index.module.js";
 
     const $ = (id) => document.getElementById(id);
 
@@ -386,21 +385,23 @@
     const heightRange = $("heightRange");
     const layersRange = $("layersRange");
     const depthRange = $("depthRange");
-    const offsetXRange = $("offsetXRange");
-    const offsetYRange = $("offsetYRange");
-    const scaleStepRange = $("scaleStepRange");
+    const bandWidthRange = $("bandWidthRange");
+    const stepScaleRange = $("stepScaleRange");
+    const zGapRange = $("zGapRange");
 
     const heightValue = $("heightValue");
     const layersValue = $("layersValue");
     const depthValue = $("depthValue");
-    const offsetXValue = $("offsetXValue");
-    const offsetYValue = $("offsetYValue");
-    const scaleStepValue = $("scaleStepValue");
+    const bandWidthValue = $("bandWidthValue");
+    const stepScaleValue = $("stepScaleValue");
+    const zGapValue = $("zGapValue");
 
     const waveCanvas = $("waveCanvas");
     const viewerCanvas = $("viewer");
 
     let scene, camera, renderer, controls, modelGroup;
+    let evaluator = new Evaluator();
+
     let audioContext = null;
     let mediaRecorder = null;
     let mediaStream = null;
@@ -413,6 +414,8 @@
 
     let fontRegular = null;
     let fontBold = null;
+
+    evaluator.attributes = ["position", "normal"];
 
     init3D();
     initUI();
@@ -460,7 +463,7 @@
         generateModel();
       });
 
-      [heightRange, layersRange, depthRange, offsetXRange, offsetYRange, scaleStepRange].forEach(el => {
+      [heightRange, layersRange, depthRange, bandWidthRange, stepScaleRange, zGapRange].forEach(el => {
         el.addEventListener("input", () => {
           updateValueLabels();
           analyzePitchTrack();
@@ -473,9 +476,9 @@
       heightValue.textContent = `${(+heightRange.value).toFixed(1)} cm`;
       layersValue.textContent = `${layersRange.value}`;
       depthValue.textContent = `${(+depthRange.value).toFixed(2)} cm`;
-      offsetXValue.textContent = `${(+offsetXRange.value).toFixed(2)} cm`;
-      offsetYValue.textContent = `${(+offsetYRange.value).toFixed(2)} cm`;
-      scaleStepValue.textContent = `${(+scaleStepRange.value).toFixed(1)}%`;
+      bandWidthValue.textContent = `${(+bandWidthRange.value).toFixed(1)}%`;
+      stepScaleValue.textContent = `${(+stepScaleRange.value).toFixed(1)}%`;
+      zGapValue.textContent = `${(+zGapRange.value).toFixed(2)} cm`;
     }
 
     function status(msg){
@@ -486,8 +489,8 @@
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0xefeff2);
 
-      camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
-      camera.position.set(0, 0.8, 12);
+      camera = new THREE.PerspectiveCamera(38, 1, 0.1, 300);
+      camera.position.set(0, 0.6, 13);
 
       renderer = new THREE.WebGLRenderer({
         canvas: viewerCanvas,
@@ -505,8 +508,8 @@
       const hemi = new THREE.HemisphereLight(0xffffff, 0x666666, 2.0);
       scene.add(hemi);
 
-      const key = new THREE.DirectionalLight(0xffffff, 2.6);
-      key.position.set(4, 7, 6);
+      const key = new THREE.DirectionalLight(0xffffff, 2.8);
+      key.position.set(5, 7, 6);
       key.castShadow = true;
       scene.add(key);
 
@@ -516,10 +519,10 @@
 
       const floor = new THREE.Mesh(
         new THREE.PlaneGeometry(200, 200),
-        new THREE.ShadowMaterial({ opacity: 0.14 })
+        new THREE.ShadowMaterial({ opacity: 0.12 })
       );
       floor.rotation.x = -Math.PI / 2;
-      floor.position.y = -6;
+      floor.position.y = -8;
       floor.receiveShadow = true;
       scene.add(floor);
 
@@ -546,11 +549,11 @@
         const loader = new FontLoader();
         fontRegular = await loader.loadAsync("https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_regular.typeface.json");
         fontBold = await loader.loadAsync("https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json");
-        status("Ready. Record audio or generate the layered letter.");
+        status("Ready. This version generates contour ribbon bands, not stacked solid letters.");
         generateModel();
       }catch(err){
         console.error(err);
-        status("Could not load the 3D font. Check your internet connection.");
+        status("Could not load the font. Check internet connection.");
       }
     }
 
@@ -659,7 +662,7 @@
         stopBtn.disabled = false;
         playBtn.disabled = true;
 
-        status("Recording... speak or sing. Pitch will control layer brightness.");
+        status("Recording... pitch will control contour brightness.");
       }catch(err){
         console.error(err);
         status("Microphone access failed. Make sure browser permission is enabled.");
@@ -717,7 +720,7 @@
         analyzePitchTrack();
         generateModel();
 
-        status("Audio loaded. Higher pitch layers are lighter; lower pitch layers are darker.");
+        status("Audio loaded. Higher pitch bands are lighter; lower pitch bands are darker.");
       }catch(err){
         console.error(err);
         status("Could not decode the recording. Try Chrome or Edge.");
@@ -775,35 +778,13 @@
       rms = Math.sqrt(rms / frame.length);
       if (rms < 0.01) return 0;
 
-      let r1 = 0;
-      let r2 = frame.length - 1;
-      const threshold = 0.2;
-
-      for(let i = 0; i < frame.length / 2; i++){
-        if (Math.abs(frame[i]) < threshold){
-          r1 = i;
-        } else {
-          break;
-        }
-      }
-
-      for(let i = 1; i < frame.length / 2; i++){
-        if (Math.abs(frame[frame.length - i]) < threshold){
-          r2 = frame.length - i;
-        } else {
-          break;
-        }
-      }
-
-      const data = frame.slice(r1, r2);
-      const size = data.length;
-      if (size < 32) return 0;
-
+      const size = frame.length;
       const corr = new Array(size).fill(0);
+
       for(let lag = 0; lag < size; lag++){
         let sum = 0;
         for(let i = 0; i < size - lag; i++){
-          sum += data[i] * data[i + lag];
+          sum += frame[i] * frame[i + lag];
         }
         corr[lag] = sum;
       }
@@ -838,53 +819,6 @@
       return pitch;
     }
 
-    function analyzePitchTrack(){
-      const layers = +layersRange.value;
-
-      if (!audioBuffer){
-        pitchValues = Array.from({ length: layers }, (_, i) => 180 + 260 * (0.5 + 0.5 * Math.sin(i * 0.7)));
-        return;
-      }
-
-      const channel = getCroppedChannelData();
-      if (!channel || !channel.length){
-        pitchValues = Array.from({ length: layers }, () => 220);
-        return;
-      }
-
-      const sampleRate = audioBuffer.sampleRate;
-      const minWindow = 2048;
-      const segmentLength = Math.max(minWindow, Math.floor(channel.length / layers));
-      const out = [];
-
-      for(let i = 0; i < layers; i++){
-        const start = Math.floor(i * channel.length / layers);
-        const end = Math.min(channel.length, start + segmentLength);
-        const frame = channel.slice(start, end);
-
-        let pitch = autocorrelatePitch(frame, sampleRate);
-
-        if (!pitch){
-          // fallback: use spectral centroid as rough pitch-like value
-          pitch = estimateCentroid(frame, sampleRate);
-        }
-
-        out.push(pitch || 0);
-      }
-
-      // Fill missing values
-      let last = 220;
-      for(let i = 0; i < out.length; i++){
-        if (!out[i]){
-          out[i] = last;
-        } else {
-          last = out[i];
-        }
-      }
-
-      pitchValues = out;
-    }
-
     function estimateCentroid(frame, sampleRate){
       const N = Math.min(1024, frame.length);
       if (N < 64) return 220;
@@ -911,6 +845,48 @@
       return Math.max(80, Math.min(1200, centroid));
     }
 
+    function analyzePitchTrack(){
+      const layers = +layersRange.value;
+
+      if (!audioBuffer){
+        pitchValues = Array.from({ length: layers }, (_, i) => 180 + 260 * (0.5 + 0.5 * Math.sin(i * 0.7)));
+        return;
+      }
+
+      const channel = getCroppedChannelData();
+      if (!channel || !channel.length){
+        pitchValues = Array.from({ length: layers }, () => 220);
+        return;
+      }
+
+      const sampleRate = audioBuffer.sampleRate;
+      const minWindow = 2048;
+      const segmentLength = Math.max(minWindow, Math.floor(channel.length / layers));
+      const out = [];
+
+      for(let i = 0; i < layers; i++){
+        const start = Math.floor(i * channel.length / layers);
+        const end = Math.min(channel.length, start + segmentLength);
+        const frame = channel.slice(start, end);
+
+        let pitch = autocorrelatePitch(frame, sampleRate);
+        if (!pitch) pitch = estimateCentroid(frame, sampleRate);
+
+        out.push(pitch || 0);
+      }
+
+      let last = 220;
+      for(let i = 0; i < out.length; i++){
+        if (!out[i]){
+          out[i] = last;
+        } else {
+          last = out[i];
+        }
+      }
+
+      pitchValues = out;
+    }
+
     function clearModel(){
       if (!modelGroup) return;
       scene.remove(modelGroup);
@@ -927,13 +903,38 @@
     function pitchToLightness(pitch, minPitch, maxPitch){
       if (!Number.isFinite(pitch)) pitch = minPitch;
       const t = (pitch - minPitch) / Math.max(1e-6, maxPitch - minPitch);
-      return 0.22 + Math.max(0, Math.min(1, t)) * 0.68;
+      return 0.24 + Math.max(0, Math.min(1, t)) * 0.68;
     }
 
     function makeLayerColor(lightness){
       const c = new THREE.Color();
-      c.setHSL(0, 0, lightness); // grayscale
+      c.setHSL(0, 0, lightness);
       return c;
+    }
+
+    function makeContourBand(baseGeometry, outerScale, innerScale, material){
+      const outerBrush = new Brush(baseGeometry.clone());
+      outerBrush.scale.set(outerScale, outerScale, 1);
+      outerBrush.updateMatrixWorld(true);
+
+      if (innerScale > 0.03){
+        const innerBrush = new Brush(baseGeometry.clone());
+        innerBrush.scale.set(innerScale, innerScale, 1.08);
+        innerBrush.position.z = -0.02;
+        innerBrush.updateMatrixWorld(true);
+
+        const band = evaluator.evaluate(outerBrush, innerBrush, SUBTRACTION);
+        band.material = material;
+        band.castShadow = true;
+        band.receiveShadow = true;
+        return band;
+      } else {
+        const solid = new THREE.Mesh(baseGeometry.clone(), material);
+        solid.scale.set(outerScale, outerScale, 1);
+        solid.castShadow = true;
+        solid.receiveShadow = true;
+        return solid;
+      }
     }
 
     function generateModel(){
@@ -948,16 +949,16 @@
 
         const letterHeight = +heightRange.value;
         const layerCount = +layersRange.value;
-        const layerDepth = +depthRange.value;
-        const offsetStepX = +offsetXRange.value;
-        const offsetStepY = +offsetYRange.value;
-        const scaleStep = (+scaleStepRange.value) / 100;
+        const bandDepth = +depthRange.value;
+        const bandWidth = (+bandWidthRange.value) / 100;
+        const growthStep = (+stepScaleRange.value) / 100;
+        const zGap = +zGapRange.value;
 
         const baseGeometry = new TextGeometry(letter, {
           font,
           size: letterHeight,
-          height: layerDepth,
-          curveSegments: 18,
+          height: bandDepth,
+          curveSegments: 28,
           bevelEnabled: false
         });
 
@@ -974,13 +975,13 @@
         );
 
         modelGroup = new THREE.Group();
-        modelGroup.name = "layeredLetter";
+        modelGroup.name = "contourRibbonLetter";
 
         const validPitches = pitchValues.filter(v => Number.isFinite(v) && v > 0);
         const minPitch = validPitches.length ? Math.min(...validPitches) : 120;
         const maxPitch = validPitches.length ? Math.max(...validPitches) : 600;
 
-        // Build from back to front so front layer is visually clean
+        // back to front
         for(let i = layerCount - 1; i >= 0; i--){
           const pitch = pitchValues[Math.min(i, pitchValues.length - 1)] || 220;
           const lightness = pitchToLightness(pitch, minPitch, maxPitch);
@@ -988,33 +989,26 @@
 
           const material = new THREE.MeshStandardMaterial({
             color,
-            metalness: 0.20,
-            roughness: 0.78
+            metalness: 0.12,
+            roughness: 0.84
           });
 
-          const mesh = new THREE.Mesh(baseGeometry.clone(), material);
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
+          const outerScale = 1 + i * growthStep;
+          const innerScale = Math.max(0.01, outerScale - bandWidth);
 
-          const layerIndexFromFront = layerCount - 1 - i;
-          const spread = i;
+          const bandMesh = makeContourBand(baseGeometry, outerScale, innerScale, material);
 
-          mesh.scale.setScalar(1 + spread * scaleStep);
-          mesh.position.x = spread * offsetStepX;
-          mesh.position.y = -spread * offsetStepY;
-          mesh.position.z = -layerIndexFromFront * (layerDepth + 0.01);
-
-          modelGroup.add(mesh);
+          bandMesh.position.z = -i * (bandDepth + zGap);
+          modelGroup.add(bandMesh);
         }
 
-        // slight presentation tilt similar to the reference
-        modelGroup.rotation.x = -0.10;
-        modelGroup.rotation.y = -0.34;
-        modelGroup.rotation.z = 0.02;
+        // presentation angle closer to reference image two
+        modelGroup.rotation.x = -0.08;
+        modelGroup.rotation.y = -0.58;
+        modelGroup.rotation.z = 0.01;
 
         scene.add(modelGroup);
 
-        // center and frame
         const finalBox = new THREE.Box3().setFromObject(modelGroup);
         const center = finalBox.getCenter(new THREE.Vector3());
         modelGroup.position.sub(center);
@@ -1022,14 +1016,14 @@
         const size = finalBox.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
 
-        camera.position.set(maxDim * 0.15, maxDim * 0.08, maxDim * 1.8);
+        camera.position.set(maxDim * 0.08, maxDim * 0.02, maxDim * 1.7);
         controls.target.set(0, 0, 0);
         controls.update();
 
-        status("3D preview updated. The letter uses a layered ribbon-style form, and pitch now controls brightness.");
+        status("3D preview updated. The letter is now generated as contour ribbon bands, much closer to image two.");
       }catch(err){
         console.error(err);
-        status("An error happened while generating the 3D model. Check the browser console.");
+        status("An error happened while generating the contour bands. Check the browser console.");
       }
     }
 
@@ -1047,7 +1041,7 @@
 
         const a = document.createElement("a");
         a.href = url;
-        a.download = `layered-letter-${(letterInput.value || "R").toUpperCase()}.stl`;
+        a.download = `contour-letter-${(letterInput.value || "R").toUpperCase()}.stl`;
         document.body.appendChild(a);
         a.click();
         a.remove();
