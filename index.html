@@ -3,275 +3,275 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Voice Wave Letter Ornament Generator</title>
+  <title>Layered Letter Audio Color Ornament</title>
+
   <style>
-    :root {
-      --yellow: #ffd400;
-      --panel: #fffdf0;
-      --ink: #26303a;
-      --muted: #7a8490;
-      --blue: #0787ff;
-      --dark: #151515;
-      --line: #e7e2c8;
+    :root{
+      --yellow:#f0c900;
+      --panel:#fff9de;
+      --panel2:#f8f1cc;
+      --ink:#27303b;
+      --muted:#67717e;
+      --line:#e8dfbb;
+      --blue:#157bff;
+      --dark:#131313;
+      --gray:#a6adb7;
+      --preview:#efeff2;
     }
 
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;height:100%}
+    body{
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--ink);
-      background: var(--yellow);
-      overflow: hidden;
+      background:var(--yellow);
+      color:var(--ink);
     }
 
-    .app {
-      width: 100vw;
-      height: 100vh;
-      display: grid;
-      grid-template-columns: 385px 1fr;
-      gap: 22px;
-      padding: 18px;
+    .app{
+      display:grid;
+      grid-template-columns:380px 1fr;
+      gap:20px;
+      padding:16px;
+      height:100vh;
     }
 
-    aside {
-      background: linear-gradient(180deg, #fffefa 0%, #fff5c9 100%);
-      border-radius: 24px;
-      box-shadow: 0 18px 45px rgba(0,0,0,0.14);
-      padding: 26px;
-      overflow-y: auto;
+    .sidebar{
+      background:linear-gradient(180deg,var(--panel),var(--panel2));
+      border-radius:26px;
+      padding:22px;
+      overflow:auto;
+      box-shadow:0 16px 40px rgba(0,0,0,.14);
     }
 
-    main {
-      position: relative;
-      background: #f3f3f5;
-      border-radius: 24px;
-      overflow: hidden;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
+    .viewer-wrap{
+      position:relative;
+      background:var(--preview);
+      border-radius:26px;
+      overflow:hidden;
+      min-height:520px;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);
     }
 
-    h1 {
-      margin: 0 0 20px;
-      font-size: 28px;
-      letter-spacing: -0.04em;
-      line-height: 1;
+    #viewer{
+      width:100%;
+      height:100%;
+      display:block;
     }
 
-    h2 {
-      margin: 22px 0 10px;
-      font-size: 13px;
-      letter-spacing: 0.01em;
-      color: #59616b;
+    .viewer-pill{
+      position:absolute;
+      top:20px;
+      left:20px;
+      z-index:10;
+      background:white;
+      border-radius:999px;
+      padding:10px 14px;
+      font-size:12px;
+      font-weight:900;
+      color:#6b7280;
+      box-shadow:0 10px 24px rgba(0,0,0,.08);
     }
 
-    .tabs {
-      padding: 6px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.82);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-      margin-bottom: 26px;
+    .tabs{
+      background:rgba(255,255,255,.72);
+      border-radius:18px;
+      padding:6px;
+      box-shadow:0 8px 20px rgba(0,0,0,.06);
+      margin-bottom:20px;
     }
 
-    .tab {
-      width: 100%;
-      border: 0;
-      border-radius: 12px;
-      padding: 14px 16px;
-      background: transparent;
-      color: #6b7280;
-      text-align: left;
-      font-weight: 800;
-      cursor: pointer;
+    .tab{
+      width:100%;
+      border:0;
+      border-radius:12px;
+      background:transparent;
+      padding:13px 14px;
+      font-weight:800;
+      text-align:left;
+      color:#616976;
     }
 
-    .tab.active {
-      background: white;
-      color: #202832;
-      box-shadow: 0 5px 16px rgba(0,0,0,0.08);
+    .tab.active{
+      background:white;
+      color:#1f2937;
+      box-shadow:0 4px 14px rgba(0,0,0,.06);
     }
 
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    h1{
+      margin:10px 0 16px;
+      font-size:28px;
+      line-height:1;
+      letter-spacing:-.04em;
     }
 
-    label {
-      display: block;
-      margin-bottom: 7px;
-      font-size: 12px;
-      font-weight: 800;
-      color: #5d6670;
+    h2{
+      margin:20px 0 8px;
+      font-size:13px;
+      font-weight:900;
+      color:#646d79;
     }
 
-    input[type="text"], input[type="number"], select {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 12px 13px;
-      background: white;
-      color: var(--ink);
-      font-weight: 800;
-      outline: none;
+    .row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
     }
 
-    input[type="range"] { width: 100%; }
-
-    .button {
-      width: 100%;
-      border: 0;
-      border-radius: 12px;
-      min-height: 52px;
-      margin: 7px 0;
-      font-weight: 900;
-      cursor: pointer;
-      transition: transform .12s ease, opacity .12s ease;
+    label{
+      display:block;
+      margin-bottom:6px;
+      font-size:12px;
+      font-weight:900;
+      color:#606975;
     }
 
-    .button:active { transform: translateY(1px); }
-    .button:disabled { opacity: 0.38; cursor: not-allowed; }
-    .button.dark { background: linear-gradient(#202020, #101010); color: white; }
-    .button.blue { background: var(--blue); color: white; }
-    .button.light { background: white; color: #313944; border: 1px solid #eee8cb; }
-    .button.gray { background: linear-gradient(#b7b7bd, #8f8f99); color: white; }
-
-    .record-dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      margin-right: 8px;
-      border-radius: 999px;
-      background: #ff4b45;
+    input[type="text"], select{
+      width:100%;
+      height:46px;
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:14px;
+      padding:0 12px;
+      outline:none;
+      font-size:15px;
+      font-weight:900;
+      color:var(--ink);
     }
 
-    .timer {
-      text-align: center;
-      font-size: 34px;
-      font-weight: 950;
-      letter-spacing: -0.04em;
-      margin: 20px 0 10px;
+    input[type="range"]{
+      width:100%;
     }
 
-    .wave-wrap {
-      position: relative;
-      height: 105px;
-      border-radius: 18px;
-      overflow: hidden;
-      background: white;
-      border: 1px solid #f0eddf;
+    .btn{
+      width:100%;
+      min-height:50px;
+      border:0;
+      border-radius:14px;
+      font-size:16px;
+      font-weight:900;
+      cursor:pointer;
+      margin-top:8px;
+      transition:transform .12s ease, opacity .12s ease;
     }
 
-    #waveCanvas {
-      width: 100%;
-      height: 100%;
-      display: block;
+    .btn:active{transform:translateY(1px)}
+    .btn:disabled{opacity:.45;cursor:not-allowed}
+
+    .btn-dark{
+      background:linear-gradient(180deg,#232323,#101010);
+      color:#fff;
     }
 
-    .crop-box {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 30%;
-      width: 40%;
-      background: rgba(7,135,255,0.14);
-      border: 2px solid #278fff;
-      border-top: 0;
-      border-bottom: 0;
-      cursor: move;
+    .btn-blue{
+      background:linear-gradient(180deg,#1681ff,#0f67d6);
+      color:#fff;
     }
 
-    .crop-box::before,
-    .crop-box::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 10px;
-      cursor: ew-resize;
-    }
-    .crop-box::before { left: -6px; }
-    .crop-box::after { right: -6px; }
-
-    .crop-times {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 10px;
+    .btn-gray{
+      background:linear-gradient(180deg,#babfc7,#949ca6);
+      color:#fff;
     }
 
-    .pill {
-      border-radius: 999px;
-      background: white;
-      padding: 9px 10px;
-      text-align: center;
-      font-size: 12px;
-      font-weight: 900;
-      color: #68727e;
-      border: 1px solid #f0eddf;
+    .dot{
+      display:inline-block;
+      width:10px;
+      height:10px;
+      margin-right:8px;
+      border-radius:999px;
+      background:#ff4d43;
+      vertical-align:middle;
     }
 
-    .small-note {
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.45;
+    .timer{
+      text-align:center;
+      font-size:34px;
+      font-weight:950;
+      letter-spacing:-.04em;
+      margin:18px 0 10px;
     }
 
-    .viewer-label {
-      position: absolute;
-      left: 28px;
-      top: 24px;
-      z-index: 5;
-      padding: 11px 15px;
-      border-radius: 999px;
-      background: white;
-      font-size: 12px;
-      font-weight: 900;
-      color: #656e79;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+    .wave-card{
+      background:white;
+      border:1px solid #ece5c6;
+      border-radius:18px;
+      overflow:hidden;
     }
 
-    #viewer {
-      width: 100%;
-      height: 100%;
-      display: block;
+    #waveCanvas{
+      width:100%;
+      height:104px;
+      display:block;
     }
 
-    .status {
-      min-height: 18px;
-      margin-top: 8px;
-      color: #5f6975;
-      font-size: 12px;
-      font-weight: 700;
-      line-height: 1.4;
+    .pill-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:10px;
     }
 
-    @media (max-width: 900px) {
-      body { overflow: auto; }
-      .app { height: auto; grid-template-columns: 1fr; }
-      main { min-height: 560px; }
+    .pill{
+      background:#fff;
+      border:1px solid #ede6ca;
+      border-radius:999px;
+      text-align:center;
+      padding:9px 10px;
+      font-size:12px;
+      font-weight:900;
+      color:#697281;
+    }
+
+    .status{
+      margin-top:10px;
+      min-height:18px;
+      font-size:12px;
+      line-height:1.45;
+      font-weight:800;
+      color:#5e6773;
+    }
+
+    .mini{
+      margin-top:10px;
+      font-size:12px;
+      line-height:1.45;
+      color:var(--muted);
+    }
+
+    .v{
+      float:right;
+      color:#4b5563;
+      font-weight:900;
+    }
+
+    @media (max-width: 980px){
+      .app{
+        grid-template-columns:1fr;
+        height:auto;
+      }
+      .viewer-wrap{
+        min-height:560px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <aside>
+    <aside class="sidebar">
       <div class="tabs">
-        <button class="tab active">Create letter ornament</button>
-        <button class="tab">Voice wave pattern</button>
+        <button class="tab active">Create layered letter</button>
+        <button class="tab">Pitch → color mapping</button>
       </div>
 
-      <h1>Create Ornament</h1>
+      <h1>Create Letter</h1>
 
       <div class="row">
         <div>
           <label for="letterInput">Chosen letter</label>
-          <input id="letterInput" type="text" maxlength="1" value="A" />
+          <input id="letterInput" type="text" maxlength="1" value="R" />
         </div>
         <div>
-          <label for="fontWeight">Style</label>
-          <select id="fontWeight">
+          <label for="fontStyle">Font style</label>
+          <select id="fontStyle">
             <option value="bold" selected>Bold</option>
             <option value="regular">Regular</option>
           </select>
@@ -279,42 +279,68 @@
       </div>
 
       <h2>Audio recording</h2>
-      <button id="startBtn" class="button dark"><span class="record-dot"></span>Start Recording</button>
-      <button id="stopBtn" class="button gray" disabled>Stop Recording</button>
-      <button id="playBtn" class="button dark" disabled>Play Cropped Audio</button>
+      <button id="recordBtn" class="btn btn-dark"><span class="dot"></span>Start Recording</button>
+      <button id="stopBtn" class="btn btn-gray" disabled>Stop Recording</button>
+      <button id="playBtn" class="btn btn-dark" disabled>Play Cropped Audio</button>
 
       <div id="timer" class="timer">00:00</div>
 
-      <div class="wave-wrap" id="waveWrap">
+      <div class="wave-card">
         <canvas id="waveCanvas"></canvas>
-        <div class="crop-box" id="cropBox" title="Drag to move. Drag edges to resize."></div>
       </div>
 
-      <div class="crop-times">
-        <div class="pill">Start: <span id="startTime">0.00s</span></div>
-        <div class="pill">End: <span id="endTime">0.00s</span></div>
+      <div class="pill-row">
+        <div class="pill">Start: <span id="startLabel">0.00s</span></div>
+        <div class="pill">End: <span id="endLabel">0.00s</span></div>
+      </div>
+
+      <div style="margin-top:10px">
+        <label for="trimStart">Trim start <span id="trimStartLabel" class="v">0%</span></label>
+        <input id="trimStart" type="range" min="0" max="1000" step="1" value="0" />
+      </div>
+
+      <div style="margin-top:10px">
+        <label for="trimEnd">Trim end <span id="trimEndLabel" class="v">100%</span></label>
+        <input id="trimEnd" type="range" min="0" max="1000" step="1" value="1000" />
       </div>
 
       <h2>3D settings</h2>
-      <label>Object height <span id="heightValue" style="float:right">7.0 cm</span></label>
-      <input id="heightRange" type="range" min="4" max="12" value="7" step="0.5" />
 
-      <label>Object depth <span id="depthValue" style="float:right">0.55 cm</span></label>
-      <input id="depthRange" type="range" min="0.25" max="1.2" value="0.55" step="0.05" />
+      <label for="heightRange">Letter height <span id="heightValue" class="v">7.0 cm</span></label>
+      <input id="heightRange" type="range" min="4" max="12" step="0.5" value="7" />
 
-      <label>Wave relief height <span id="waveValue" style="float:right">0.18 cm</span></label>
-      <input id="waveRange" type="range" min="0.05" max="0.45" value="0.18" step="0.01" />
+      <label for="layersRange">Number of layers <span id="layersValue" class="v">9</span></label>
+      <input id="layersRange" type="range" min="4" max="18" step="1" value="9" />
 
-      <button id="generateBtn" class="button blue" disabled>Generate 3D Ornament</button>
-      <button id="downloadBtn" class="button dark" disabled>Download STL</button>
-      <button id="resetBtn" class="button gray">Reset</button>
+      <label for="depthRange">Layer thickness <span id="depthValue" class="v">0.18 cm</span></label>
+      <input id="depthRange" type="range" min="0.08" max="0.50" step="0.01" value="0.18" />
 
-      <div class="status" id="status">Open this page through GitHub Pages or another HTTPS host so the browser can use the microphone.</div>
-      <p class="small-note">This is a single-file prototype. It creates a 3D letter, adds raised soundwave ridges from the selected audio crop, and exports an STL file for slicer software.</p>
+      <label for="offsetXRange">X offset per layer <span id="offsetXValue" class="v">0.22 cm</span></label>
+      <input id="offsetXRange" type="range" min="0.00" max="0.60" step="0.01" value="0.22" />
+
+      <label for="offsetYRange">Y offset per layer <span id="offsetYValue" class="v">0.18 cm</span></label>
+      <input id="offsetYRange" type="range" min="0.00" max="0.60" step="0.01" value="0.18" />
+
+      <label for="scaleStepRange">Scale spread <span id="scaleStepValue" class="v">2.2%</span></label>
+      <input id="scaleStepRange" type="range" min="0.0" max="6.0" step="0.1" value="2.2" />
+
+      <button id="generateBtn" class="btn btn-blue">Generate 3D Letter</button>
+      <button id="downloadBtn" class="btn btn-dark">Download STL</button>
+      <button id="resetBtn" class="btn btn-gray">Reset</button>
+
+      <div id="status" class="status">
+        This version uses a layered ribbon-style letter. Recorded audio changes layer color brightness based on pitch.
+      </div>
+
+      <div class="mini">
+        Higher pitch = lighter layer. Lower pitch = darker layer.
+        <br />
+        Microphone recording requires <strong>HTTPS</strong> (GitHub Pages) or <strong>localhost</strong>.
+      </div>
     </aside>
 
-    <main>
-      <div class="viewer-label">Drag to rotate 360° • Letter ornament</div>
+    <main class="viewer-wrap">
+      <div class="viewer-pill">Drag to rotate 360° • Pitch controls brightness</div>
       <canvas id="viewer"></canvas>
     </main>
   </div>
@@ -329,557 +355,733 @@
   </script>
 
   <script type="module">
-    import * as THREE from 'three';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-    import { FontLoader } from 'three/addons/loaders/FontLoader.js';
-    import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-    import { STLExporter } from 'three/addons/exporters/STLExporter.js';
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { FontLoader } from "three/addons/loaders/FontLoader.js";
+    import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
+    import { STLExporter } from "three/addons/exporters/STLExporter.js";
 
     const $ = (id) => document.getElementById(id);
 
-    const startBtn = $('startBtn');
-    const stopBtn = $('stopBtn');
-    const playBtn = $('playBtn');
-    const generateBtn = $('generateBtn');
-    const downloadBtn = $('downloadBtn');
-    const resetBtn = $('resetBtn');
-    const letterInput = $('letterInput');
-    const fontWeight = $('fontWeight');
-    const timer = $('timer');
-    const statusEl = $('status');
-    const waveCanvas = $('waveCanvas');
-    const waveWrap = $('waveWrap');
-    const cropBox = $('cropBox');
-    const startTimeEl = $('startTime');
-    const endTimeEl = $('endTime');
-    const heightRange = $('heightRange');
-    const depthRange = $('depthRange');
-    const waveRange = $('waveRange');
-    const heightValue = $('heightValue');
-    const depthValue = $('depthValue');
-    const waveValue = $('waveValue');
+    const recordBtn = $("recordBtn");
+    const stopBtn = $("stopBtn");
+    const playBtn = $("playBtn");
+    const generateBtn = $("generateBtn");
+    const downloadBtn = $("downloadBtn");
+    const resetBtn = $("resetBtn");
 
-    let audioContext;
-    let mediaRecorder;
-    let mediaStream;
-    let chunks = [];
+    const letterInput = $("letterInput");
+    const fontStyle = $("fontStyle");
+
+    const timerEl = $("timer");
+    const statusEl = $("status");
+
+    const trimStart = $("trimStart");
+    const trimEnd = $("trimEnd");
+    const trimStartLabel = $("trimStartLabel");
+    const trimEndLabel = $("trimEndLabel");
+    const startLabel = $("startLabel");
+    const endLabel = $("endLabel");
+
+    const heightRange = $("heightRange");
+    const layersRange = $("layersRange");
+    const depthRange = $("depthRange");
+    const offsetXRange = $("offsetXRange");
+    const offsetYRange = $("offsetYRange");
+    const scaleStepRange = $("scaleStepRange");
+
+    const heightValue = $("heightValue");
+    const layersValue = $("layersValue");
+    const depthValue = $("depthValue");
+    const offsetXValue = $("offsetXValue");
+    const offsetYValue = $("offsetYValue");
+    const scaleStepValue = $("scaleStepValue");
+
+    const waveCanvas = $("waveCanvas");
+    const viewerCanvas = $("viewer");
+
+    let scene, camera, renderer, controls, modelGroup;
+    let audioContext = null;
+    let mediaRecorder = null;
+    let mediaStream = null;
+    let recordedChunks = [];
     let audioBuffer = null;
-    let recordingStart = 0;
-    let timerId = null;
-    let cropStartRatio = 0.30;
-    let cropEndRatio = 0.70;
-    let waveformSamples = [];
+    let waveformBins = [];
+    let pitchValues = [];
+    let timerInterval = null;
+    let recordStartTime = 0;
+
     let fontRegular = null;
     let fontBold = null;
 
-    let scene, camera, renderer, controls, ornamentGroup;
-
-    initThree();
+    init3D();
     initUI();
     resizeWaveCanvas();
-    drawEmptyWaveform();
-    updateCropBox();
+    drawWaveform();
     loadFonts();
 
-    window.addEventListener('resize', () => {
-      resizeRenderer();
+    window.addEventListener("resize", () => {
+      resizeViewer();
       resizeWaveCanvas();
       drawWaveform();
     });
 
-    function initUI() {
-      startBtn.addEventListener('click', startRecording);
-      stopBtn.addEventListener('click', stopRecording);
-      playBtn.addEventListener('click', playCroppedAudio);
-      generateBtn.addEventListener('click', () => generateOrnament(true, false));
-      downloadBtn.addEventListener('click', downloadSTL);
-      resetBtn.addEventListener('click', resetAll);
+    function initUI(){
+      updateValueLabels();
+      updateTrimLabels();
 
-      letterInput.addEventListener('input', () => {
-        letterInput.value = (letterInput.value || 'A').slice(0, 1).toUpperCase();
-        generateOrnament(false, !audioBuffer);
+      recordBtn.addEventListener("click", startRecording);
+      stopBtn.addEventListener("click", stopRecording);
+      playBtn.addEventListener("click", playCroppedAudio);
+      generateBtn.addEventListener("click", generateModel);
+      downloadBtn.addEventListener("click", downloadSTL);
+      resetBtn.addEventListener("click", resetAll);
+
+      letterInput.addEventListener("input", () => {
+        letterInput.value = (letterInput.value || "R").slice(0, 1).toUpperCase();
+        generateModel();
       });
 
-      fontWeight.addEventListener('change', () => generateOrnament(false, !audioBuffer));
+      fontStyle.addEventListener("change", generateModel);
 
-      heightRange.addEventListener('input', () => {
-        heightValue.textContent = `${Number(heightRange.value).toFixed(1)} cm`;
-        generateOrnament(false, !audioBuffer);
+      trimStart.addEventListener("input", () => {
+        if (+trimStart.value >= +trimEnd.value) trimStart.value = Math.max(0, +trimEnd.value - 1);
+        updateTrimLabels();
+        drawWaveform();
+        analyzePitchTrack();
+        generateModel();
       });
 
-      depthRange.addEventListener('input', () => {
-        depthValue.textContent = `${Number(depthRange.value).toFixed(2)} cm`;
-        generateOrnament(false, !audioBuffer);
+      trimEnd.addEventListener("input", () => {
+        if (+trimEnd.value <= +trimStart.value) trimEnd.value = Math.min(1000, +trimStart.value + 1);
+        updateTrimLabels();
+        drawWaveform();
+        analyzePitchTrack();
+        generateModel();
       });
 
-      waveRange.addEventListener('input', () => {
-        waveValue.textContent = `${Number(waveRange.value).toFixed(2)} cm`;
-        generateOrnament(false, !audioBuffer);
+      [heightRange, layersRange, depthRange, offsetXRange, offsetYRange, scaleStepRange].forEach(el => {
+        el.addEventListener("input", () => {
+          updateValueLabels();
+          analyzePitchTrack();
+          generateModel();
+        });
       });
     }
 
-    async function loadFonts() {
-      const loader = new FontLoader();
-      try {
-        status('Loading 3D preview...');
-        fontRegular = await loader.loadAsync('https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_regular.typeface.json');
-        fontBold = await loader.loadAsync('https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json');
-        generateOrnament(false, true);
-        generateBtn.disabled = false;
-        status('Ready. Record audio, crop the waveform, then generate the ornament.');
-      } catch (err) {
-        console.error(err);
-        status('The 3D font did not load. Check your internet connection and browser console.');
-      }
+    function updateValueLabels(){
+      heightValue.textContent = `${(+heightRange.value).toFixed(1)} cm`;
+      layersValue.textContent = `${layersRange.value}`;
+      depthValue.textContent = `${(+depthRange.value).toFixed(2)} cm`;
+      offsetXValue.textContent = `${(+offsetXRange.value).toFixed(2)} cm`;
+      offsetYValue.textContent = `${(+offsetYRange.value).toFixed(2)} cm`;
+      scaleStepValue.textContent = `${(+scaleStepRange.value).toFixed(1)}%`;
     }
 
-    function initThree() {
-      const canvas = $('viewer');
+    function status(msg){
+      statusEl.textContent = msg;
+    }
+
+    function init3D(){
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xf3f3f5);
+      scene.background = new THREE.Color(0xefeff2);
 
       camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
-      camera.position.set(0, 0.8, 13);
+      camera.position.set(0, 0.8, 12);
 
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+      renderer = new THREE.WebGLRenderer({
+        canvas: viewerCanvas,
+        antialias: true,
+        preserveDrawingBuffer: true
+      });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-      renderer.shadowMap.enabled = true;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.shadowMap.enabled = true;
 
       controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.08;
 
-      const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 2.2);
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x666666, 2.0);
       scene.add(hemi);
 
-      const key = new THREE.DirectionalLight(0xffffff, 3.8);
-      key.position.set(3, 6, 6);
+      const key = new THREE.DirectionalLight(0xffffff, 2.6);
+      key.position.set(4, 7, 6);
       key.castShadow = true;
       scene.add(key);
 
-      const rim = new THREE.DirectionalLight(0xffffff, 1.6);
-      rim.position.set(-4, 2, -5);
-      scene.add(rim);
+      const fill = new THREE.DirectionalLight(0xffffff, 1.0);
+      fill.position.set(-5, 3, -6);
+      scene.add(fill);
 
-      resizeRenderer();
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(200, 200),
+        new THREE.ShadowMaterial({ opacity: 0.14 })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = -6;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      resizeViewer();
       animate();
     }
 
-    function resizeRenderer() {
-      const canvas = $('viewer');
-      const rect = canvas.parentElement.getBoundingClientRect();
+    function resizeViewer(){
+      const rect = viewerCanvas.parentElement.getBoundingClientRect();
       renderer.setSize(rect.width, rect.height, false);
       camera.aspect = rect.width / rect.height;
       camera.updateProjectionMatrix();
     }
 
-    function animate() {
+    function animate(){
       requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
     }
 
-    async function startRecording() {
-      const hasMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-      if (!hasMedia) {
-        status('Microphone recording is not available. Open this page from GitHub Pages using HTTPS, or use http://localhost during development.');
+    async function loadFonts(){
+      try{
+        status("Loading 3D font...");
+        const loader = new FontLoader();
+        fontRegular = await loader.loadAsync("https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_regular.typeface.json");
+        fontBold = await loader.loadAsync("https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json");
+        status("Ready. Record audio or generate the layered letter.");
+        generateModel();
+      }catch(err){
+        console.error(err);
+        status("Could not load the 3D font. Check your internet connection.");
+      }
+    }
+
+    function currentFont(){
+      return fontStyle.value === "bold" ? fontBold : fontRegular;
+    }
+
+    function resizeWaveCanvas(){
+      const ratio = window.devicePixelRatio || 1;
+      const rect = waveCanvas.getBoundingClientRect();
+      waveCanvas.width = Math.max(1, Math.floor(rect.width * ratio));
+      waveCanvas.height = Math.max(1, Math.floor(rect.height * ratio));
+    }
+
+    function updateTrimLabels(){
+      trimStartLabel.textContent = `${Math.round(+trimStart.value / 10)}%`;
+      trimEndLabel.textContent = `${Math.round(+trimEnd.value / 10)}%`;
+
+      const duration = audioBuffer ? audioBuffer.duration : 0;
+      const s = duration * (+trimStart.value / 1000);
+      const e = duration * (+trimEnd.value / 1000);
+      startLabel.textContent = `${s.toFixed(2)}s`;
+      endLabel.textContent = `${e.toFixed(2)}s`;
+    }
+
+    function drawWaveform(){
+      const ctx = waveCanvas.getContext("2d");
+      const w = waveCanvas.width;
+      const h = waveCanvas.height;
+      const ratio = window.devicePixelRatio || 1;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, w, h);
+
+      const bins = waveformBins.length
+        ? waveformBins
+        : Array.from({length: 220}, (_, i) => 0.18 + 0.18 * Math.abs(Math.sin(i * 0.16)) + 0.08 * Math.abs(Math.cos(i * 0.06)));
+
+      const startX = (+trimStart.value / 1000) * w;
+      const endX = (+trimEnd.value / 1000) * w;
+
+      ctx.fillStyle = "rgba(21,123,255,.12)";
+      ctx.fillRect(startX, 0, endX - startX, h);
+
+      const mid = h / 2;
+      const barW = w / bins.length;
+
+      for(let i = 0; i < bins.length; i++){
+        const x = i * barW;
+        const amp = bins[i] * h * 0.42;
+        const centerX = x + barW * 0.5;
+        const active = centerX >= startX && centerX <= endX;
+        ctx.fillStyle = active ? "#157bff" : "#c7c9cf";
+        ctx.fillRect(x, mid - amp, Math.max(1, barW * 0.55), amp * 2);
+      }
+
+      ctx.strokeStyle = "#d8dce4";
+      ctx.lineWidth = 1 * ratio;
+      ctx.beginPath();
+      ctx.moveTo(0, mid);
+      ctx.lineTo(w, mid);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#157bff";
+      ctx.lineWidth = 2 * ratio;
+      ctx.beginPath();
+      ctx.moveTo(startX, 0);
+      ctx.lineTo(startX, h);
+      ctx.moveTo(endX, 0);
+      ctx.lineTo(endX, h);
+      ctx.stroke();
+    }
+
+    async function startRecording(){
+      if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){
+        status("Microphone recording is not available. Use HTTPS (GitHub Pages) or localhost.");
         return;
       }
 
-      try {
+      try{
         audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
-        if (audioContext.state === 'suspended') await audioContext.resume();
+        if (audioContext.state === "suspended") await audioContext.resume();
 
         mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-        const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus'
-          : MediaRecorder.isTypeSupported('audio/mp4')
-            ? 'audio/mp4'
-            : '';
+        let options = {};
+        if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported("audio/webm;codecs=opus")){
+          options.mimeType = "audio/webm;codecs=opus";
+        }
 
-        mediaRecorder = mime ? new MediaRecorder(mediaStream, { mimeType: mime }) : new MediaRecorder(mediaStream);
-        chunks = [];
+        mediaRecorder = new MediaRecorder(mediaStream, options);
+        recordedChunks = [];
 
-        mediaRecorder.addEventListener('dataavailable', (e) => {
-          if (e.data && e.data.size > 0) chunks.push(e.data);
+        mediaRecorder.addEventListener("dataavailable", (e) => {
+          if (e.data && e.data.size > 0) recordedChunks.push(e.data);
         });
-        mediaRecorder.addEventListener('stop', processRecording);
+
+        mediaRecorder.addEventListener("stop", handleRecordingStop);
         mediaRecorder.start();
 
-        recordingStart = performance.now();
-        timerId = setInterval(updateTimer, 100);
-        updateTimer();
-        startBtn.disabled = true;
+        recordStartTime = performance.now();
+        timerInterval = setInterval(updateTimer, 100);
+
+        recordBtn.disabled = true;
         stopBtn.disabled = false;
         playBtn.disabled = true;
-        generateBtn.disabled = true;
-        downloadBtn.disabled = true;
-        status('Recording... speak or sing the tone you want to turn into raised 3D waves.');
-      } catch (err) {
+
+        status("Recording... speak or sing. Pitch will control layer brightness.");
+      }catch(err){
         console.error(err);
-        status('Microphone access failed. Use HTTPS/GitHub Pages, then allow microphone permission in the browser.');
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
+        status("Microphone access failed. Make sure browser permission is enabled.");
       }
     }
 
-    function stopRecording() {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-      if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
-      clearInterval(timerId);
+    function updateTimer(){
+      const total = Math.floor((performance.now() - recordStartTime) / 1000);
+      const mm = String(Math.floor(total / 60)).padStart(2, "0");
+      const ss = String(total % 60).padStart(2, "0");
+      timerEl.textContent = `${mm}:${ss}`;
+    }
+
+    function stopRecording(){
+      try{
+        if (mediaRecorder && mediaRecorder.state !== "inactive"){
+          mediaRecorder.stop();
+        }
+      }catch(err){
+        console.error(err);
+      }
+
+      if (mediaStream){
+        mediaStream.getTracks().forEach(track => track.stop());
+      }
+
+      clearInterval(timerInterval);
+      recordBtn.disabled = false;
       stopBtn.disabled = true;
-      startBtn.disabled = false;
-      status('Processing recording...');
+      status("Processing audio...");
     }
 
-    function updateTimer() {
-      const sec = Math.floor((performance.now() - recordingStart) / 1000);
-      timer.textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
-    }
-
-    async function processRecording() {
-      try {
-        if (!chunks.length) {
-          status('No audio was captured. Try recording again and allow microphone permission.');
+    async function handleRecordingStop(){
+      try{
+        if (!recordedChunks.length){
+          status("No audio was captured.");
           return;
         }
 
-        const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+        const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || "audio/webm" });
         const arrayBuffer = await blob.arrayBuffer();
+
         audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
         audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
 
-        cropStartRatio = 0.25;
-        cropEndRatio = 0.80;
-        extractWaveformSamples();
+        waveformBins = computeWaveformBins(audioBuffer, 240);
+
+        trimStart.value = 0;
+        trimEnd.value = 1000;
+        updateTrimLabels();
         drawWaveform();
-        updateCropBox();
+
         playBtn.disabled = false;
-        generateBtn.disabled = false;
-        generateOrnament(true, false);
-        status('Recording ready. Drag the blue selection to choose the part used for the ornament.');
-      } catch (err) {
+
+        analyzePitchTrack();
+        generateModel();
+
+        status("Audio loaded. Higher pitch layers are lighter; lower pitch layers are darker.");
+      }catch(err){
         console.error(err);
-        status('Could not decode the recording in this browser. Try Chrome/Edge, or refresh and record again.');
+        status("Could not decode the recording. Try Chrome or Edge.");
       }
     }
 
-    function extractWaveformSamples() {
-      if (!audioBuffer) return;
-      const channel = audioBuffer.getChannelData(0);
-      const sampleCount = 240;
-      waveformSamples = [];
-      for (let i = 0; i < sampleCount; i++) {
-        const start = Math.floor(i * channel.length / sampleCount);
-        const end = Math.floor((i + 1) * channel.length / sampleCount);
+    function computeWaveformBins(buffer, count = 240){
+      const channel = buffer.getChannelData(0);
+      const out = [];
+      for(let i = 0; i < count; i++){
+        const start = Math.floor(i * channel.length / count);
+        const end = Math.floor((i + 1) * channel.length / count);
         let sum = 0;
-        for (let j = start; j < end; j++) sum += Math.abs(channel[j]);
-        waveformSamples.push(sum / Math.max(1, end - start));
+        for(let j = start; j < end; j++){
+          sum += Math.abs(channel[j]);
+        }
+        out.push(sum / Math.max(1, end - start));
       }
-      const max = Math.max(...waveformSamples, 0.0001);
-      waveformSamples = waveformSamples.map(v => v / max);
+      const max = Math.max(...out, 0.00001);
+      return out.map(v => v / max);
     }
 
-    async function playCroppedAudio() {
+    async function playCroppedAudio(){
       if (!audioBuffer) return;
+
       audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === 'suspended') await audioContext.resume();
+      if (audioContext.state === "suspended") await audioContext.resume();
 
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(audioContext.destination);
-      const start = cropStartRatio * audioBuffer.duration;
-      const duration = Math.max(0.08, (cropEndRatio - cropStartRatio) * audioBuffer.duration);
+
+      const start = audioBuffer.duration * (+trimStart.value / 1000);
+      const end = audioBuffer.duration * (+trimEnd.value / 1000);
+      const duration = Math.max(0.05, end - start);
       source.start(0, start, duration);
-      status(`Playing selected crop: ${start.toFixed(2)}s to ${(start + duration).toFixed(2)}s.`);
+
+      status(`Playing crop from ${start.toFixed(2)}s to ${end.toFixed(2)}s.`);
     }
 
-    function resizeWaveCanvas() {
-      const rect = waveWrap.getBoundingClientRect();
-      waveCanvas.width = Math.max(1, Math.floor(rect.width * (window.devicePixelRatio || 1)));
-      waveCanvas.height = Math.max(1, Math.floor(rect.height * (window.devicePixelRatio || 1)));
+    function getCroppedChannelData(){
+      if (!audioBuffer) return null;
+      const channel = audioBuffer.getChannelData(0);
+      const start = Math.floor(channel.length * (+trimStart.value / 1000));
+      const end = Math.max(start + 1, Math.floor(channel.length * (+trimEnd.value / 1000)));
+      return channel.slice(start, end);
     }
 
-    function drawEmptyWaveform() {
-      const ctx = waveCanvas.getContext('2d');
-      const w = waveCanvas.width;
-      const h = waveCanvas.height;
-      ctx.clearRect(0, 0, w, h);
-      ctx.strokeStyle = '#b6b6b6';
-      ctx.setLineDash([3, 5]);
-      ctx.lineWidth = 2 * (window.devicePixelRatio || 1);
-      ctx.beginPath();
-      ctx.moveTo(0, h / 2);
-      ctx.lineTo(w, h / 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    function drawWaveform() {
-      const ctx = waveCanvas.getContext('2d');
-      const w = waveCanvas.width;
-      const h = waveCanvas.height;
-      ctx.clearRect(0, 0, w, h);
-      if (!waveformSamples.length) return drawEmptyWaveform();
-
-      const mid = h / 2;
-      const barW = w / waveformSamples.length;
-      for (let i = 0; i < waveformSamples.length; i++) {
-        const x = i * barW;
-        const amp = waveformSamples[i] * h * 0.42;
-        const selected = i / waveformSamples.length >= cropStartRatio && i / waveformSamples.length <= cropEndRatio;
-        ctx.fillStyle = selected ? '#0787ff' : '#c7c7c7';
-        ctx.fillRect(x, mid - amp, Math.max(1, barW * 0.45), amp * 2);
+    function autocorrelatePitch(frame, sampleRate){
+      let rms = 0;
+      for(let i = 0; i < frame.length; i++){
+        const v = frame[i];
+        rms += v * v;
       }
-    }
+      rms = Math.sqrt(rms / frame.length);
+      if (rms < 0.01) return 0;
 
-    let cropDrag = null;
-    waveWrap.addEventListener('pointerdown', (e) => {
-      const rect = waveWrap.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width;
-      const edge = 0.035;
-      if (Math.abs(x - cropStartRatio) < edge) cropDrag = 'left';
-      else if (Math.abs(x - cropEndRatio) < edge) cropDrag = 'right';
-      else if (x > cropStartRatio && x < cropEndRatio) cropDrag = { move: true, offset: x - cropStartRatio };
-      else {
-        cropStartRatio = Math.max(0, x - 0.15);
-        cropEndRatio = Math.min(1, x + 0.15);
-        cropDrag = { move: true, offset: 0.15 };
+      let r1 = 0;
+      let r2 = frame.length - 1;
+      const threshold = 0.2;
+
+      for(let i = 0; i < frame.length / 2; i++){
+        if (Math.abs(frame[i]) < threshold){
+          r1 = i;
+        } else {
+          break;
+        }
       }
-      waveWrap.setPointerCapture(e.pointerId);
-      updateCropByPointer(e);
-    });
 
-    waveWrap.addEventListener('pointermove', (e) => {
-      if (!cropDrag) return;
-      updateCropByPointer(e);
-    });
-
-    waveWrap.addEventListener('pointerup', (e) => {
-      cropDrag = null;
-      waveWrap.releasePointerCapture(e.pointerId);
-      if (audioBuffer) generateOrnament(false, false);
-    });
-
-    function updateCropByPointer(e) {
-      const rect = waveWrap.getBoundingClientRect();
-      const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-      const minWidth = 0.05;
-      if (cropDrag === 'left') cropStartRatio = Math.min(cropEndRatio - minWidth, x);
-      else if (cropDrag === 'right') cropEndRatio = Math.max(cropStartRatio + minWidth, x);
-      else if (cropDrag?.move) {
-        const width = cropEndRatio - cropStartRatio;
-        let newStart = x - cropDrag.offset;
-        newStart = Math.max(0, Math.min(1 - width, newStart));
-        cropStartRatio = newStart;
-        cropEndRatio = newStart + width;
+      for(let i = 1; i < frame.length / 2; i++){
+        if (Math.abs(frame[frame.length - i]) < threshold){
+          r2 = frame.length - i;
+        } else {
+          break;
+        }
       }
-      updateCropBox();
-      drawWaveform();
-    }
 
-    function updateCropBox() {
-      cropBox.style.left = `${cropStartRatio * 100}%`;
-      cropBox.style.width = `${(cropEndRatio - cropStartRatio) * 100}%`;
-      const dur = audioBuffer ? audioBuffer.duration : 0;
-      startTimeEl.textContent = `${(cropStartRatio * dur).toFixed(2)}s`;
-      endTimeEl.textContent = `${(cropEndRatio * dur).toFixed(2)}s`;
-    }
+      const data = frame.slice(r1, r2);
+      const size = data.length;
+      if (size < 32) return 0;
 
-    function getCropSamples(count = 56) {
-      if (!waveformSamples.length) {
-        return Array.from({ length: count }, (_, i) => 0.35 + 0.25 * Math.sin(i * 0.45));
+      const corr = new Array(size).fill(0);
+      for(let lag = 0; lag < size; lag++){
+        let sum = 0;
+        for(let i = 0; i < size - lag; i++){
+          sum += data[i] * data[i + lag];
+        }
+        corr[lag] = sum;
       }
-      const start = Math.floor(cropStartRatio * waveformSamples.length);
-      const end = Math.max(start + 1, Math.floor(cropEndRatio * waveformSamples.length));
-      const crop = waveformSamples.slice(start, end);
-      const result = [];
-      for (let i = 0; i < count; i++) {
-        const idx = Math.floor(i * crop.length / count);
-        result.push(crop[Math.min(crop.length - 1, idx)] || 0);
+
+      let d = 0;
+      while (d < size - 1 && corr[d] > corr[d + 1]) d++;
+
+      let maxValue = -1;
+      let maxPos = -1;
+      for(let i = d; i < size; i++){
+        if (corr[i] > maxValue){
+          maxValue = corr[i];
+          maxPos = i;
+        }
       }
-      return result;
+
+      if (maxPos <= 0) return 0;
+
+      let T0 = maxPos;
+      if (maxPos > 0 && maxPos < size - 1){
+        const x1 = corr[maxPos - 1];
+        const x2 = corr[maxPos];
+        const x3 = corr[maxPos + 1];
+        const a = (x1 + x3 - 2 * x2) / 2;
+        const b = (x3 - x1) / 2;
+        if (a) T0 = T0 - b / (2 * a);
+      }
+
+      const pitch = sampleRate / T0;
+      if (!Number.isFinite(pitch)) return 0;
+      if (pitch < 60 || pitch > 1200) return 0;
+      return pitch;
     }
 
-    function getFont() {
-      return fontWeight.value === 'bold' ? fontBold : fontRegular;
+    function analyzePitchTrack(){
+      const layers = +layersRange.value;
+
+      if (!audioBuffer){
+        pitchValues = Array.from({ length: layers }, (_, i) => 180 + 260 * (0.5 + 0.5 * Math.sin(i * 0.7)));
+        return;
+      }
+
+      const channel = getCroppedChannelData();
+      if (!channel || !channel.length){
+        pitchValues = Array.from({ length: layers }, () => 220);
+        return;
+      }
+
+      const sampleRate = audioBuffer.sampleRate;
+      const minWindow = 2048;
+      const segmentLength = Math.max(minWindow, Math.floor(channel.length / layers));
+      const out = [];
+
+      for(let i = 0; i < layers; i++){
+        const start = Math.floor(i * channel.length / layers);
+        const end = Math.min(channel.length, start + segmentLength);
+        const frame = channel.slice(start, end);
+
+        let pitch = autocorrelatePitch(frame, sampleRate);
+
+        if (!pitch){
+          // fallback: use spectral centroid as rough pitch-like value
+          pitch = estimateCentroid(frame, sampleRate);
+        }
+
+        out.push(pitch || 0);
+      }
+
+      // Fill missing values
+      let last = 220;
+      for(let i = 0; i < out.length; i++){
+        if (!out[i]){
+          out[i] = last;
+        } else {
+          last = out[i];
+        }
+      }
+
+      pitchValues = out;
     }
 
-    function clearOrnament() {
-      if (!ornamentGroup) return;
-      scene.remove(ornamentGroup);
-      ornamentGroup.traverse(obj => {
+    function estimateCentroid(frame, sampleRate){
+      const N = Math.min(1024, frame.length);
+      if (N < 64) return 220;
+
+      let sumMag = 0;
+      let sumFreq = 0;
+
+      for(let k = 1; k < N / 2; k++){
+        let re = 0;
+        let im = 0;
+        for(let n = 0; n < N; n++){
+          const phi = (2 * Math.PI * k * n) / N;
+          re += frame[n] * Math.cos(phi);
+          im -= frame[n] * Math.sin(phi);
+        }
+        const mag = Math.sqrt(re * re + im * im);
+        const freq = (k * sampleRate) / N;
+        sumMag += mag;
+        sumFreq += mag * freq;
+      }
+
+      if (sumMag <= 0.00001) return 220;
+      const centroid = sumFreq / sumMag;
+      return Math.max(80, Math.min(1200, centroid));
+    }
+
+    function clearModel(){
+      if (!modelGroup) return;
+      scene.remove(modelGroup);
+      modelGroup.traverse(obj => {
         if (obj.geometry) obj.geometry.dispose();
-        if (obj.material) obj.material.dispose?.();
+        if (obj.material){
+          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+          else obj.material.dispose();
+        }
       });
-      ornamentGroup = null;
+      modelGroup = null;
     }
 
-    function generateOrnament(showStatus = true, placeholder = false) {
-      if (!getFont()) return;
-      clearOrnament();
+    function pitchToLightness(pitch, minPitch, maxPitch){
+      if (!Number.isFinite(pitch)) pitch = minPitch;
+      const t = (pitch - minPitch) / Math.max(1e-6, maxPitch - minPitch);
+      return 0.22 + Math.max(0, Math.min(1, t)) * 0.68;
+    }
 
-      const letter = (letterInput.value || 'A').slice(0, 1).toUpperCase();
-      const heightCm = Number(heightRange.value);
-      const depthCm = Number(depthRange.value);
-      const waveReliefCm = Number(waveRange.value);
-      const size = heightCm;
-      const depth = depthCm;
+    function makeLayerColor(lightness){
+      const c = new THREE.Color();
+      c.setHSL(0, 0, lightness); // grayscale
+      return c;
+    }
 
-      ornamentGroup = new THREE.Group();
-      ornamentGroup.name = 'voice-wave-letter-ornament';
+    function generateModel(){
+      if (!currentFont()) return;
 
-      const metal = new THREE.MeshStandardMaterial({
-        color: 0xd8dce2,
-        metalness: 0.82,
-        roughness: 0.24
-      });
+      try{
+        clearModel();
+        analyzePitchTrack();
 
-      const darkMetal = new THREE.MeshStandardMaterial({
-        color: 0x191919,
-        metalness: 0.9,
-        roughness: 0.20
-      });
+        const letter = (letterInput.value || "R").slice(0, 1).toUpperCase();
+        const font = currentFont();
 
-      const textGeo = new TextGeometry(letter, {
-        font: getFont(),
-        size,
-        height: depth,
-        curveSegments: 18,
-        bevelEnabled: true,
-        bevelThickness: 0.065,
-        bevelSize: 0.055,
-        bevelSegments: 4
-      });
-      textGeo.computeBoundingBox();
-      const box = textGeo.boundingBox;
-      const textW = box.max.x - box.min.x;
-      const textH = box.max.y - box.min.y;
-      textGeo.translate(-box.min.x - textW / 2, -box.min.y - textH / 2, -depth / 2);
+        const letterHeight = +heightRange.value;
+        const layerCount = +layersRange.value;
+        const layerDepth = +depthRange.value;
+        const offsetStepX = +offsetXRange.value;
+        const offsetStepY = +offsetYRange.value;
+        const scaleStep = (+scaleStepRange.value) / 100;
 
-      const letterMesh = new THREE.Mesh(textGeo, metal);
-      letterMesh.castShadow = true;
-      letterMesh.receiveShadow = true;
-      ornamentGroup.add(letterMesh);
+        const baseGeometry = new TextGeometry(letter, {
+          font,
+          size: letterHeight,
+          height: layerDepth,
+          curveSegments: 18,
+          bevelEnabled: false
+        });
 
-      const ringOuter = Math.max(0.42, heightCm * 0.075);
-      const ringTube = Math.max(0.085, heightCm * 0.018);
-      const ringGeo = new THREE.TorusGeometry(ringOuter, ringTube, 18, 72);
-      const ring = new THREE.Mesh(ringGeo, metal);
-      ring.rotation.x = Math.PI / 2;
-      ring.position.set(0, textH / 2 + ringOuter * 1.20, 0);
-      ornamentGroup.add(ring);
+        baseGeometry.computeBoundingBox();
+        const box = baseGeometry.boundingBox;
+        const width = box.max.x - box.min.x;
+        const height = box.max.y - box.min.y;
+        const depth = box.max.z - box.min.z;
 
-      const samples = getCropSamples(70);
-      const maxW = Math.max(textW * 0.94, 1);
-      const frontZ = depth / 2 + waveReliefCm / 2 + 0.01;
-      const ridgeCount = samples.length;
-      const gap = textH / (ridgeCount + 1);
-      const ridgeThickness = Math.max(0.035, heightCm * 0.010);
+        baseGeometry.translate(
+          -box.min.x - width / 2,
+          -box.min.y - height / 2,
+          -box.min.z - depth / 2
+        );
 
-      for (let i = 0; i < ridgeCount; i++) {
-        const normalized = placeholder ? 0.25 + 0.35 * Math.abs(Math.sin(i * 0.32)) : samples[i];
-        const ridgeW = Math.max(maxW * 0.12, maxW * (0.18 + normalized * 0.78));
-        const y = -textH / 2 + gap * (i + 1);
-        const ridgeGeo = new THREE.BoxGeometry(ridgeW, ridgeThickness, waveReliefCm);
-        const ridge = new THREE.Mesh(ridgeGeo, i % 7 === 0 ? darkMetal : metal);
-        ridge.position.set(0, y, frontZ);
-        ridge.castShadow = true;
-        ornamentGroup.add(ridge);
+        modelGroup = new THREE.Group();
+        modelGroup.name = "layeredLetter";
+
+        const validPitches = pitchValues.filter(v => Number.isFinite(v) && v > 0);
+        const minPitch = validPitches.length ? Math.min(...validPitches) : 120;
+        const maxPitch = validPitches.length ? Math.max(...validPitches) : 600;
+
+        // Build from back to front so front layer is visually clean
+        for(let i = layerCount - 1; i >= 0; i--){
+          const pitch = pitchValues[Math.min(i, pitchValues.length - 1)] || 220;
+          const lightness = pitchToLightness(pitch, minPitch, maxPitch);
+          const color = makeLayerColor(lightness);
+
+          const material = new THREE.MeshStandardMaterial({
+            color,
+            metalness: 0.20,
+            roughness: 0.78
+          });
+
+          const mesh = new THREE.Mesh(baseGeometry.clone(), material);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+
+          const layerIndexFromFront = layerCount - 1 - i;
+          const spread = i;
+
+          mesh.scale.setScalar(1 + spread * scaleStep);
+          mesh.position.x = spread * offsetStepX;
+          mesh.position.y = -spread * offsetStepY;
+          mesh.position.z = -layerIndexFromFront * (layerDepth + 0.01);
+
+          modelGroup.add(mesh);
+        }
+
+        // slight presentation tilt similar to the reference
+        modelGroup.rotation.x = -0.10;
+        modelGroup.rotation.y = -0.34;
+        modelGroup.rotation.z = 0.02;
+
+        scene.add(modelGroup);
+
+        // center and frame
+        const finalBox = new THREE.Box3().setFromObject(modelGroup);
+        const center = finalBox.getCenter(new THREE.Vector3());
+        modelGroup.position.sub(center);
+
+        const size = finalBox.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+
+        camera.position.set(maxDim * 0.15, maxDim * 0.08, maxDim * 1.8);
+        controls.target.set(0, 0, 0);
+        controls.update();
+
+        status("3D preview updated. The letter uses a layered ribbon-style form, and pitch now controls brightness.");
+      }catch(err){
+        console.error(err);
+        status("An error happened while generating the 3D model. Check the browser console.");
+      }
+    }
+
+    function downloadSTL(){
+      if (!modelGroup){
+        status("Nothing to export yet.");
+        return;
       }
 
-      const plateShape = new THREE.Shape();
-      const plateW = Math.max(textW * 1.08, heightCm * 0.62);
-      const plateH = textH * 1.06;
-      const r = Math.min(0.35, plateW * 0.08);
-      roundedRect(plateShape, -plateW / 2, -plateH / 2, plateW, plateH, r);
-      const plateDepth = Math.max(0.12, depth * 0.30);
-      const plateGeo = new THREE.ExtrudeGeometry(plateShape, {
-        depth: plateDepth,
-        bevelEnabled: true,
-        bevelSize: 0.025,
-        bevelThickness: 0.025,
-        bevelSegments: 2
-      });
-      plateGeo.translate(0, 0, -depth / 2 - plateDepth);
-      const plate = new THREE.Mesh(plateGeo, new THREE.MeshStandardMaterial({
-        color: 0xcfd3d8,
-        metalness: 0.75,
-        roughness: 0.35,
-        transparent: true,
-        opacity: 0.45
-      }));
-      plate.receiveShadow = true;
-      ornamentGroup.add(plate);
+      try{
+        const exporter = new STLExporter();
+        const stlString = exporter.parse(modelGroup, { binary: false });
+        const blob = new Blob([stlString], { type: "model/stl" });
+        const url = URL.createObjectURL(blob);
 
-      scene.add(ornamentGroup);
-      centerAndFrame(ornamentGroup);
-      downloadBtn.disabled = false;
-      if (showStatus) status('3D ornament generated. Rotate the preview or download the STL for slicing.');
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `layered-letter-${(letterInput.value || "R").toUpperCase()}.stl`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        URL.revokeObjectURL(url);
+        status("STL downloaded.");
+      }catch(err){
+        console.error(err);
+        status("Failed to export STL.");
+      }
     }
 
-    function roundedRect(shape, x, y, w, h, r) {
-      shape.moveTo(x + r, y);
-      shape.lineTo(x + w - r, y);
-      shape.quadraticCurveTo(x + w, y, x + w, y + r);
-      shape.lineTo(x + w, y + h - r);
-      shape.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-      shape.lineTo(x + r, y + h);
-      shape.quadraticCurveTo(x, y + h, x, y + h - r);
-      shape.lineTo(x, y + r);
-      shape.quadraticCurveTo(x, y, x + r, y);
-    }
+    function resetAll(){
+      if (mediaStream){
+        mediaStream.getTracks().forEach(track => track.stop());
+      }
 
-    function centerAndFrame(obj) {
-      const box = new THREE.Box3().setFromObject(obj);
-      const center = box.getCenter(new THREE.Vector3());
-      obj.position.sub(center);
-      const size = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-      camera.position.set(0, maxDim * 0.10, maxDim * 1.85);
-      camera.lookAt(0, 0, 0);
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
-
-    function downloadSTL() {
-      if (!ornamentGroup) return;
-      const exporter = new STLExporter();
-      const stlString = exporter.parse(ornamentGroup, { binary: false });
-      const blob = new Blob([stlString], { type: 'model/stl' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `voice-wave-letter-${(letterInput.value || 'A').toUpperCase()}.stl`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      status('STL downloaded. Open it in your slicer before sending it to a 3D printer.');
-    }
-
-    function resetAll() {
-      chunks = [];
+      recordedChunks = [];
       audioBuffer = null;
-      waveformSamples = [];
-      cropStartRatio = 0.30;
-      cropEndRatio = 0.70;
-      timer.textContent = '00:00';
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-      playBtn.disabled = true;
-      generateBtn.disabled = false;
-      downloadBtn.disabled = false;
-      updateCropBox();
-      drawEmptyWaveform();
-      generateOrnament(false, true);
-      status('Reset complete. Record a new voice sample to create a fresh soundwave pattern.');
-    }
+      waveformBins = [];
+      pitchValues = [];
 
-    function status(message) {
-      statusEl.textContent = message;
+      trimStart.value = 0;
+      trimEnd.value = 1000;
+      timerEl.textContent = "00:00";
+      playBtn.disabled = true;
+      recordBtn.disabled = false;
+      stopBtn.disabled = true;
+
+      updateTrimLabels();
+      drawWaveform();
+      generateModel();
+
+      status("Reset complete.");
     }
   </script>
 </body>
