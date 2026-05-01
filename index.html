@@ -45,6 +45,7 @@
     #scene { width: 100%; height: 100%; min-height: 620px; display: block; }
     .row { display: grid; gap: 8px; }
     .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .threecol { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
     label { font-size: 13px; font-weight: 700; color: #4b382f; }
     input[type="range"] { width: 100%; }
     input[type="file"] {
@@ -54,7 +55,7 @@
       border-radius: 14px;
       background: #fffdf9;
     }
-    button, .fileButton {
+    button {
       appearance: none;
       border: 0;
       border-radius: 14px;
@@ -101,6 +102,15 @@
       .viewer, #scene { min-height: 520px; }
     }
   </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body>
   <header>
@@ -112,16 +122,12 @@
     <section class="panel controls">
       <div class="row">
         <label>1. Record voice</label>
-        <div class="twocol">
+        <div class="threecol">
           <button id="recordBtn">Record</button>
           <button id="stopBtn" class="secondary" disabled>Stop</button>
+          <button id="playBtn" class="secondary" disabled>Play</button>
         </div>
-        <div id="status" class="status">Ready. Click Record and speak for 3–10 seconds.</div>
-      </div>
-
-      <div class="row">
-        <label>Or upload audio</label>
-        <input id="audioFile" type="file" accept="audio/*" />
+        <div id="status" class="status">Ready. Click Record and speak for 3–10 seconds. Microphone recording requires HTTPS, so it will work on GitHub Pages but may not work from a plain local file.</div>
       </div>
 
       <div class="twocol">
@@ -178,9 +184,9 @@
   </main>
 
   <script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-    import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
-    import { STLExporter } from 'https://unpkg.com/three@0.160.0/examples/jsm/exporters/STLExporter.js';
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { STLExporter } from 'three/addons/exporters/STLExporter.js';
 
     const canvas = document.querySelector('#scene');
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -217,13 +223,18 @@
 
     let waveform = makeDemoWave(48);
     let logoImage = null;
-    let recorder, chunks = [], liveStream;
+    let recorder = null;
+    let chunks = [];
+    let liveStream = null;
+    let recordedBlob = null;
+    let recordedAudioUrl = null;
+    const player = new Audio();
 
     const ui = {
       status: document.querySelector('#status'),
       recordBtn: document.querySelector('#recordBtn'),
       stopBtn: document.querySelector('#stopBtn'),
-      audioFile: document.querySelector('#audioFile'),
+      playBtn: document.querySelector('#playBtn'),
       logoFile: document.querySelector('#logoFile'),
       stripeCount: document.querySelector('#stripeCount'),
       heightScale: document.querySelector('#heightScale'),
@@ -236,6 +247,10 @@
       baseDepthVal: document.querySelector('#baseDepthVal'),
       logoSizeVal: document.querySelector('#logoSizeVal')
     };
+
+    window.addEventListener('error', (event) => {
+      ui.status.textContent = 'Preview error: ' + event.message;
+    });
 
     function updateLabels() {
       ui.stripeCountVal.textContent = ui.stripeCount.value;
@@ -257,7 +272,6 @@
         const child = group.children.pop();
         child.traverse?.((obj) => {
           if (obj.geometry) obj.geometry.dispose();
-          if (obj.material && obj.material.map) obj.material.map.dispose();
         });
       }
     }
@@ -293,7 +307,6 @@
       const foot = box(width + 0.85, 0.28, depth * 1.8, mats.black, 0, 0.14, depth * 0.12, 'bottom_foot');
       root.add(foot);
 
-      // Regular long vertical stripes: these are the architectural base rhythm.
       for (let i = 0; i < count + 5; i++) {
         const x = -width / 2 - spacing * 2 + i * spacing;
         const h = maxH + 0.35;
@@ -301,7 +314,6 @@
         root.add(box(stripeW * 0.55, h, depth * 1.25, mat, x, h / 2 + 0.18, depth * 0.18, 'regular_long_stripe'));
       }
 
-      // Audio waveform strips: irregular brown/cream panels derived from voice amplitude.
       const palette = [mats.darkWood, mats.redWood, mats.warmWood, mats.paleWood];
       for (let i = 0; i < count; i++) {
         const x = -width / 2 + spacing / 2 + i * spacing;
@@ -312,7 +324,6 @@
         root.add(box(stripeW, h, depth * 1.45, mat, x, h / 2 + 0.32, zJitter, 'voice_wave_stripe'));
       }
 
-      // Thin horizontal bands inspired by the source facade.
       for (const y of [1.45, 1.68, 1.92]) {
         root.add(box(width + 0.35, 0.055, depth * 1.55, mats.black, 0, y, depth * 0.36, 'horizontal_band'));
       }
@@ -333,7 +344,6 @@
       logoGroup.add(panel);
 
       if (!logoImage) {
-        // Placeholder mark. Replace by uploading the real logo image.
         const mark1 = box(panelW * 0.5, 0.055, depth * 0.3, mats.logo, panel.position.x, panel.position.y, depth * 0.9, 'placeholder_logo_line');
         mark1.rotation.z = Math.PI / 4;
         const mark2 = box(panelW * 0.5, 0.055, depth * 0.3, mats.logo, panel.position.x, panel.position.y, depth * 0.91, 'placeholder_logo_line');
@@ -349,13 +359,13 @@
 
     function imageToReliefMeshes(img, targetW, targetH, reliefDepth, cells) {
       const group = new THREE.Group();
-      const canvas = document.createElement('canvas');
+      const tempCanvas = document.createElement('canvas');
       const aspect = img.width / img.height;
       const cols = cells;
       const rows = Math.max(10, Math.round(cells / aspect));
-      canvas.width = cols;
-      canvas.height = rows;
-      const ctx = canvas.getContext('2d');
+      tempCanvas.width = cols;
+      tempCanvas.height = rows;
+      const ctx = tempCanvas.getContext('2d');
       ctx.clearRect(0, 0, cols, rows);
       ctx.drawImage(img, 0, 0, cols, rows);
       const data = ctx.getImageData(0, 0, cols, rows).data;
@@ -389,14 +399,16 @@
     }
 
     async function decodeAudioToWave(arrayBuffer, count) {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) throw new Error('This browser does not support Web Audio.');
+      const audioCtx = new AudioCtx();
       const buffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
       const channel = buffer.getChannelData(0);
-      const samplesPerBin = Math.floor(channel.length / count);
+      const samplesPerBin = Math.max(1, Math.floor(channel.length / count));
       const values = [];
       for (let i = 0; i < count; i++) {
         const start = i * samplesPerBin;
-        const end = i === count - 1 ? channel.length : start + samplesPerBin;
+        const end = i === count - 1 ? channel.length : Math.min(channel.length, start + samplesPerBin);
         let sum = 0;
         for (let j = start; j < end; j++) sum += channel[j] * channel[j];
         values.push(Math.sqrt(sum / Math.max(1, end - start)));
@@ -404,7 +416,7 @@
       const max = Math.max(...values, 0.00001);
       let normalized = values.map(v => Math.pow(v / max, 0.68));
       normalized = smooth(normalized, 2);
-      audioCtx.close?.();
+      await audioCtx.close?.();
       return normalized.map(v => Math.max(0.06, Math.min(1, v)));
     }
 
@@ -416,34 +428,79 @@
       return out;
     }
 
+    function chooseSupportedMimeType() {
+      const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+      return types.find(type => window.MediaRecorder && MediaRecorder.isTypeSupported(type)) || '';
+    }
+
     async function startRecording() {
       try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error('Microphone recording is not available. Use HTTPS, such as GitHub Pages, and a modern browser.');
+        }
         chunks = [];
+        recordedBlob = null;
+        ui.playBtn.disabled = true;
         liveStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        recorder = new MediaRecorder(liveStream);
-        recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-        recorder.onstop = async () => {
-          const blob = new Blob(chunks, { type: recorder.mimeType });
-          const buf = await blob.arrayBuffer();
-          waveform = await decodeAudioToWave(buf, Number(ui.stripeCount.value));
-          buildModel();
-          ui.status.textContent = 'Voice captured. The brown irregular strips now follow your recording.';
-          liveStream?.getTracks().forEach(t => t.stop());
+        const mimeType = chooseSupportedMimeType();
+        recorder = mimeType ? new MediaRecorder(liveStream, { mimeType }) : new MediaRecorder(liveStream);
+
+        recorder.ondataavailable = e => {
+          if (e.data && e.data.size) chunks.push(e.data);
         };
+
+        recorder.onerror = event => {
+          ui.status.textContent = 'Recording error: ' + (event.error?.message || 'unknown error');
+        };
+
+        recorder.onstop = async () => {
+          try {
+            recordedBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+            if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
+            recordedAudioUrl = URL.createObjectURL(recordedBlob);
+            player.src = recordedAudioUrl;
+            ui.playBtn.disabled = false;
+
+            const buf = await recordedBlob.arrayBuffer();
+            waveform = await decodeAudioToWave(buf, Number(ui.stripeCount.value));
+            buildModel();
+            ui.status.textContent = 'Voice captured. Click Play to hear it, or Export STL to download the 3D model.';
+          } catch (err) {
+            ui.status.textContent = 'The voice was recorded, but waveform decoding failed in this browser. Try Chrome or Edge on HTTPS.';
+            console.error(err);
+          } finally {
+            liveStream?.getTracks().forEach(t => t.stop());
+            liveStream = null;
+            ui.recordBtn.disabled = false;
+            ui.stopBtn.disabled = true;
+          }
+        };
+
         recorder.start();
         ui.recordBtn.disabled = true;
         ui.stopBtn.disabled = false;
-        ui.status.textContent = 'Recording... speak clearly.';
+        ui.status.textContent = 'Recording... speak clearly, then click Stop.';
       } catch (err) {
-        ui.status.textContent = 'Microphone permission failed. You can upload an audio file instead.';
+        ui.status.textContent = err.message || 'Microphone permission failed. Make sure the page is served over HTTPS and microphone access is allowed.';
+        ui.recordBtn.disabled = false;
+        ui.stopBtn.disabled = true;
         console.error(err);
       }
     }
 
     function stopRecording() {
-      if (recorder && recorder.state !== 'inactive') recorder.stop();
-      ui.recordBtn.disabled = false;
-      ui.stopBtn.disabled = true;
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.stop();
+        ui.status.textContent = 'Processing recording...';
+      }
+    }
+
+    function playRecording() {
+      if (!recordedAudioUrl) return;
+      player.currentTime = 0;
+      player.play().catch(err => {
+        ui.status.textContent = 'Playback failed: ' + err.message;
+      });
     }
 
     function download(filename, text) {
@@ -466,21 +523,14 @@
 
     ui.recordBtn.addEventListener('click', startRecording);
     ui.stopBtn.addEventListener('click', stopRecording);
+    ui.playBtn.addEventListener('click', playRecording);
+
     ui.randomBtn.addEventListener('click', () => {
       waveform = makeDemoWave(Number(ui.stripeCount.value));
       buildModel();
       ui.status.textContent = 'Demo waveform generated.';
     });
     ui.exportBtn.addEventListener('click', exportSTL);
-
-    ui.audioFile.addEventListener('change', async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      ui.status.textContent = 'Processing audio file...';
-      waveform = await decodeAudioToWave(await file.arrayBuffer(), Number(ui.stripeCount.value));
-      buildModel();
-      ui.status.textContent = 'Audio processed. The model has been regenerated.';
-    });
 
     ui.logoFile.addEventListener('change', (e) => {
       const file = e.target.files?.[0];
@@ -490,6 +540,7 @@
         logoImage = img;
         buildModel();
         ui.status.textContent = 'Logo loaded and converted into raised relief geometry.';
+        URL.revokeObjectURL(img.src);
       };
       img.src = URL.createObjectURL(file);
     });
@@ -500,8 +551,10 @@
 
     function resize() {
       const rect = canvas.parentElement.getBoundingClientRect();
-      renderer.setSize(rect.width, rect.height, false);
-      camera.aspect = rect.width / rect.height;
+      const width = Math.max(320, rect.width);
+      const height = Math.max(420, rect.height);
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
     }
 
