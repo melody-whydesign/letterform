@@ -120,7 +120,7 @@
 <body>
   <header>
     <h1>Voice Wave Souvenir Generator</h1>
-    <p>Record a voice, crop the preferred part of the soundwave, convert it into facade strips, and export an STL for 3D printing.</p>
+    <p>Preview a one-colour 3D-printable Hong Kong landmark souvenir. The side menu stays for future audio features, but the model now uses fixed landmark silhouettes instead of audio-generated strips.</p>
   </header>
 
   <main>
@@ -132,7 +132,7 @@
           <button id="stopBtn" class="secondary" disabled>Stop</button>
           <button id="playBtn" class="secondary" disabled>Play</button>
         </div>
-        <div id="status" class="status">Ready. The default preview shows the regular base stripes only. Brown/cream voice strips appear after recording.</div>
+        <div id="status" class="status">Ready. The souvenir now shows a fixed Hong Kong landmark skyline in one dark-brown material. Recording controls are kept for the next audio version.</div>
       </div>
 
       <div class="row">
@@ -305,15 +305,22 @@
         root.add(box(stripeW * 0.55, h, depth * 1.25, mats.dark, x, h / 2 + 0.18, depth * 0.18, 'regular_long_stripe'));
       }
 
-      if (hasRecording && waveform.length) {
-        const values = resample(waveform, count);
-        for (let i = 0; i < count; i++) {
-          const x = -width / 2 + spacing / 2 + i * spacing;
-          const amp = Math.min(1, values[i] * scale);
-          const h = minH + amp * (maxH - minH);
-          const landmarkIndex = i % 5;
-          addHongKongLandmark(root, landmarkIndex, x, h, voiceStripeW, depth);
-        }
+      // Fixed Hong Kong landmark skyline. Not driven by audio for now.
+      const skyline = [
+        { type: 0, h: 3.3 }, // Legislative Council
+        { type: 1, h: 5.5 }, // IFC
+        { type: 3, h: 4.9 }, // Bank of China Tower
+        { type: 4, h: 3.8 }, // HSBC
+        { type: 2, h: 5.8 }, // ICC
+        { type: 5, h: 4.2 }, // Central Plaza / generic spire tower
+        { type: 6, h: 3.6 }  // harbour mid-rise cluster
+      ];
+      const landmarkCount = skyline.length;
+      const landmarkSpacing = width / landmarkCount;
+      const landmarkW = landmarkSpacing * 0.56;
+      for (let i = 0; i < landmarkCount; i++) {
+        const x = -width / 2 + landmarkSpacing / 2 + i * landmarkSpacing;
+        addHongKongLandmark(root, skyline[i].type, x, skyline[i].h, landmarkW, depth);
       }
 
       for (const y of [1.45, 1.68, 1.92]) {
@@ -359,39 +366,66 @@
       root.add(group);
     }
 
+    function addDetail(group, x, y, w, h, depth, name = 'detail') {
+      group.add(box(w, h, depth * 1.72, mats.dark, x, y, depth * 0.72, name));
+    }
+
     function addHongKongLandmark(group, type, x, h, w, depth) {
       const z = depth * 0.35;
       const d = depth * 1.55;
       const baseY = 0.32;
       const bodyH = Math.max(0.35, h);
 
-      // These are simplified 3D-printable silhouettes inspired by Hong Kong landmarks:
-      // Legislative Council, IFC, ICC, Bank of China Tower, and HSBC Building.
+      // One-colour landmark silhouettes. Recognition comes from shape + raised facade lines.
       if (type === 0) {
-        // Legislative Council: lower civic block with a small crown.
-        group.add(box(w * 1.45, bodyH * 0.72, d, mats.dark, x, baseY + bodyH * 0.36, z, 'hk_legco_body'));
-        group.add(box(w * 0.95, bodyH * 0.18, d, mats.dark, x, baseY + bodyH * 0.82, z, 'hk_legco_roof'));
-        group.add(box(w * 0.22, bodyH * 0.16, d, mats.dark, x, baseY + bodyH * 0.99, z, 'hk_legco_crown'));
+        // Legislative Council: civic block, classical roof rhythm, central crown.
+        group.add(box(w * 1.62, bodyH * 0.55, d, mats.dark, x, baseY + bodyH * 0.28, z, 'legco_main_block'));
+        group.add(box(w * 1.45, bodyH * 0.10, d, mats.dark, x, baseY + bodyH * 0.61, z, 'legco_roof_band'));
+        group.add(box(w * 0.95, bodyH * 0.10, d, mats.dark, x, baseY + bodyH * 0.74, z, 'legco_upper_band'));
+        group.add(box(w * 0.26, bodyH * 0.18, d, mats.dark, x, baseY + bodyH * 0.88, z, 'legco_crown'));
+        for (let i = -3; i <= 3; i++) addDetail(group, x + i * w * 0.19, baseY + bodyH * 0.28, w * 0.035, bodyH * 0.46, depth, 'legco_columns');
       } else if (type === 1) {
-        // IFC: slim rounded tower impression.
-        group.add(box(w * 0.82, bodyH * 0.92, d, mats.dark, x, baseY + bodyH * 0.46, z, 'hk_ifc_tower'));
-        group.add(box(w * 0.55, bodyH * 0.08, d, mats.dark, x, baseY + bodyH * 0.96, z, 'hk_ifc_cap'));
+        // IFC: slim rounded tower impression with stacked horizontal floor bands.
+        group.add(box(w * 0.78, bodyH * 0.92, d, mats.dark, x, baseY + bodyH * 0.46, z, 'ifc_tower'));
+        group.add(box(w * 0.54, bodyH * 0.08, d, mats.dark, x, baseY + bodyH * 0.96, z, 'ifc_cap'));
+        for (let i = 1; i <= 8; i++) addDetail(group, x, baseY + bodyH * (i / 10), w * 0.68, bodyH * 0.012, depth, 'ifc_floor_bands');
+        addDetail(group, x, baseY + bodyH * 0.48, w * 0.035, bodyH * 0.82, depth, 'ifc_center_spine');
       } else if (type === 2) {
-        // ICC: tall stepped tower.
-        group.add(box(w * 1.0, bodyH * 0.78, d, mats.dark, x, baseY + bodyH * 0.39, z, 'hk_icc_lower'));
-        group.add(box(w * 0.72, bodyH * 0.2, d, mats.dark, x, baseY + bodyH * 0.88, z, 'hk_icc_upper'));
-        group.add(box(w * 0.42, bodyH * 0.08, d, mats.dark, x, baseY + bodyH * 1.02, z, 'hk_icc_tip'));
+        // ICC: very tall stepped tower with crown.
+        group.add(box(w * 1.02, bodyH * 0.72, d, mats.dark, x, baseY + bodyH * 0.36, z, 'icc_lower'));
+        group.add(box(w * 0.76, bodyH * 0.18, d, mats.dark, x, baseY + bodyH * 0.81, z, 'icc_upper'));
+        group.add(box(w * 0.45, bodyH * 0.10, d, mats.dark, x, baseY + bodyH * 0.98, z, 'icc_crown'));
+        for (let i = 0; i < 6; i++) addDetail(group, x - w * 0.32 + i * w * 0.13, baseY + bodyH * 0.40, w * 0.025, bodyH * 0.60, depth, 'icc_vertical_fins');
       } else if (type === 3) {
-        // Bank of China Tower: angular triangular profile made from stacked narrowing blocks.
-        group.add(box(w * 1.25, bodyH * 0.28, d, mats.dark, x, baseY + bodyH * 0.14, z, 'hk_boc_1'));
-        group.add(box(w * 0.95, bodyH * 0.28, d, mats.dark, x, baseY + bodyH * 0.42, z, 'hk_boc_2'));
-        group.add(box(w * 0.65, bodyH * 0.28, d, mats.dark, x, baseY + bodyH * 0.70, z, 'hk_boc_3'));
-        group.add(box(w * 0.28, bodyH * 0.2, d, mats.dark, x, baseY + bodyH * 0.94, z, 'hk_boc_tip'));
+        // Bank of China Tower: angular diamond/triangular structure using diagonal raised members.
+        group.add(box(w * 1.08, bodyH * 0.32, d, mats.dark, x, baseY + bodyH * 0.16, z, 'boc_base'));
+        group.add(box(w * 0.82, bodyH * 0.30, d, mats.dark, x, baseY + bodyH * 0.46, z, 'boc_mid'));
+        group.add(box(w * 0.56, bodyH * 0.26, d, mats.dark, x, baseY + bodyH * 0.74, z, 'boc_upper'));
+        group.add(box(w * 0.25, bodyH * 0.18, d, mats.dark, x, baseY + bodyH * 0.96, z, 'boc_tip'));
+        const diag1 = box(w * 1.15, bodyH * 0.035, depth * 1.75, mats.dark, x, baseY + bodyH * 0.50, depth * 0.74, 'boc_diagonal_a');
+        diag1.rotation.z = Math.PI / 5;
+        const diag2 = box(w * 1.15, bodyH * 0.035, depth * 1.75, mats.dark, x, baseY + bodyH * 0.50, depth * 0.75, 'boc_diagonal_b');
+        diag2.rotation.z = -Math.PI / 5;
+        group.add(diag1, diag2);
+      } else if (type === 4) {
+        // HSBC: broad exoskeleton-like stepped building.
+        group.add(box(w * 1.62, bodyH * 0.32, d, mats.dark, x, baseY + bodyH * 0.16, z, 'hsbc_base'));
+        group.add(box(w * 1.28, bodyH * 0.34, d, mats.dark, x, baseY + bodyH * 0.49, z, 'hsbc_mid'));
+        group.add(box(w * 0.96, bodyH * 0.24, d, mats.dark, x, baseY + bodyH * 0.78, z, 'hsbc_top'));
+        for (let i = -2; i <= 2; i++) addDetail(group, x + i * w * 0.22, baseY + bodyH * 0.48, w * 0.04, bodyH * 0.64, depth, 'hsbc_vertical_frame');
+        addDetail(group, x, baseY + bodyH * 0.62, w * 1.42, bodyH * 0.035, depth, 'hsbc_bridge');
+      } else if (type === 5) {
+        // Central Plaza inspired: triangular/spire top.
+        group.add(box(w * 0.88, bodyH * 0.78, d, mats.dark, x, baseY + bodyH * 0.39, z, 'spire_body'));
+        group.add(box(w * 0.54, bodyH * 0.12, d, mats.dark, x, baseY + bodyH * 0.84, z, 'spire_shoulders'));
+        group.add(box(w * 0.16, bodyH * 0.22, d, mats.dark, x, baseY + bodyH * 1.01, z, 'spire_tip'));
+        for (let i = 1; i <= 6; i++) addDetail(group, x, baseY + bodyH * (i / 9), w * 0.72, bodyH * 0.012, depth, 'spire_floor_lines');
       } else {
-        // HSBC: broad stepped frame.
-        group.add(box(w * 1.55, bodyH * 0.34, d, mats.dark, x, baseY + bodyH * 0.17, z, 'hk_hsbc_base'));
-        group.add(box(w * 1.2, bodyH * 0.34, d, mats.dark, x, baseY + bodyH * 0.51, z, 'hk_hsbc_mid'));
-        group.add(box(w * 0.85, bodyH * 0.25, d, mats.dark, x, baseY + bodyH * 0.82, z, 'hk_hsbc_top'));
+        // Mid-rise harbour cluster: layered skyline filler.
+        group.add(box(w * 0.55, bodyH * 0.70, d, mats.dark, x - w * 0.36, baseY + bodyH * 0.35, z, 'cluster_left'));
+        group.add(box(w * 0.72, bodyH * 0.92, d, mats.dark, x, baseY + bodyH * 0.46, z, 'cluster_mid'));
+        group.add(box(w * 0.48, bodyH * 0.62, d, mats.dark, x + w * 0.40, baseY + bodyH * 0.31, z, 'cluster_right'));
+        for (let i = -1; i <= 1; i++) addDetail(group, x + i * w * 0.25, baseY + bodyH * 0.50, w * 0.035, bodyH * 0.50, depth, 'cluster_window_fins');
       }
     }
 
