@@ -371,7 +371,10 @@
     }
 
     function addDetail(group, x, y, w, h, depth) {
-  group.add(box(w, h, depth * 1.7, mats.dark, x, y, depth * 0.7));
+  const geo = new THREE.BoxGeometry(w, h, depth * 1.7);
+  const mesh = new THREE.Mesh(geo, mats.dark);
+  mesh.position.set(x, y, depth * 0.7);
+  group.add(mesh);
 }
 
 function addHongKongLandmark(group, type, x, h, w, depth) {
@@ -380,14 +383,33 @@ function addHongKongLandmark(group, type, x, h, w, depth) {
   const baseY = 0.32;
   const bodyH = Math.max(0.35, h);
 
-  // Updated to better match your reference silhouettes (still single-color, using relief details)
+  const addBox = (bw, bh, by) => {
+    const geo = new THREE.BoxGeometry(bw, bh, d);
+    const mesh = new THREE.Mesh(geo, mats.dark);
+    mesh.position.set(x, by, z);
+    group.add(mesh);
+  };
 
   if (type === 0) {
-    // ICC – tall clean tower with subtle bands
-    group.add(box(w * 0.7, bodyH, d, mats.dark, x, baseY + bodyH / 2, z));
-    for (let i = 1; i < 10; i++) {
-      addDetail(group, x, baseY + bodyH * (i / 10), w * 0.6, bodyH * 0.01, depth);
-    }
+    addBox(w * 0.7, bodyH, baseY + bodyH / 2);
+  } else if (type === 1) {
+    addBox(w * 0.35, bodyH * 0.75, baseY + bodyH * 0.38);
+    addBox(w * 0.55, bodyH * 0.15, baseY + bodyH * 0.78);
+  } else if (type === 2) {
+    addBox(w, bodyH, baseY + bodyH / 2);
+  } else if (type === 3) {
+    addBox(w * 1.1, bodyH * 0.3, baseY + bodyH * 0.15);
+    addBox(w * 0.8, bodyH * 0.3, baseY + bodyH * 0.45);
+    addBox(w * 0.55, bodyH * 0.25, baseY + bodyH * 0.72);
+  } else if (type === 4) {
+    addBox(w * 0.75, bodyH, baseY + bodyH / 2);
+  } else if (type === 5) {
+    addBox(w * 1.5, bodyH * 0.35, baseY + bodyH * 0.18);
+  } else {
+    addBox(w * 1.2, bodyH * 0.25, baseY + bodyH * 0.12);
+    addBox(w * 0.6, bodyH * 0.4, baseY + bodyH * 0.45);
+  }
+}
   }
 
   else if (type === 1) {
