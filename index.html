@@ -50,6 +50,23 @@
     .threecol { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
     label { font-size: 13px; font-weight: 700; color: #4b382f; }
     input[type="range"] { width: 100%; }
+    input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font: inherit;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: #f5f5f7;
+      color: var(--ink);
+      outline: none;
+    }
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(248, 208, 0, .18);
+      background: #fff;
+    }
     button {
       appearance: none;
       border: none;
@@ -131,6 +148,12 @@
   <main>
     <section class="panel controls">
       <div class="row">
+        <label for="userName">User name</label>
+        <input id="userName" type="text" maxlength="18" placeholder="TYPE NAME" value="YOUR NAME" />
+        <div class="hint">This appears on the front in Helvetica-style full caps, using the same yellow as the logo.</div>
+      </div>
+
+      <div class="row">
         <label>1. Record voice</label>
         <div class="threecol">
           <button id="recordBtn">Record</button>
@@ -186,6 +209,8 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { STLExporter } from 'three/addons/exporters/STLExporter.js';
     import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+    import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+    import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 
     const LOGO_SVG = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 238 267">
@@ -233,9 +258,15 @@
     let liveStream = null;
     let recordedBlob = null;
     let recordedAudioUrl = null;
+    let loadedFont = null;
     const player = new Audio();
+    new FontLoader().load('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json', (font) => {
+      loadedFont = font;
+      buildModel();
+    });
 
     const ui = {
+      userName: document.querySelector('#userName'),
       status: document.querySelector('#status'),
       recordBtn: document.querySelector('#recordBtn'),
       stopBtn: document.querySelector('#stopBtn'),
@@ -347,11 +378,12 @@
       }
       root.add(box(width + 0.2, 0.055, depth * 1.52, mats.paleWood, 0, 1.28, depth * 0.38, 'cream_band'));
 
-      buildCenteredLogo(width, maxH, depth);
+      buildBackLogo(width, maxH, depth);
+      buildFrontName(width, maxH, depth);
       drawWaveCanvas();
     }
 
-    function buildCenteredLogo(width, maxH, depth) {
+    function buildBackLogo(width, maxH, depth) {
       const targetH = 3.55;
       const targetW = targetH * (238 / 267);
       const reliefDepth = depth * 0.28;
@@ -375,8 +407,33 @@
 
       const scale = targetW / 238;
       logoGroup.scale.set(scale, -scale, 1);
-      logoGroup.position.set(-targetW / 2, maxH * 0.53 + targetH / 2, depth * 0.9);
+      logoGroup.position.set(-targetW / 2, maxH * 0.53 + targetH / 2, -depth * 0.66);
       root.add(logoGroup);
+    }
+
+    function buildFrontName(width, maxH, depth) {
+      const name = (ui.userName.value || '').trim().toUpperCase();
+      if (!name || !loadedFont) return;
+
+      const geometry = new TextGeometry(name, {
+        font: loadedFont,
+        size: 0.42,
+        depth: depth * 0.22,
+        curveSegments: 8,
+        bevelEnabled: false
+      });
+      geometry.computeBoundingBox();
+      const box3 = geometry.boundingBox;
+      const textW = box3.max.x - box3.min.x;
+      const textH = box3.max.y - box3.min.y;
+      const maxTextW = width * 0.48;
+      const scale = textW > maxTextW ? maxTextW / textW : 1;
+
+      const mesh = new THREE.Mesh(geometry, mats.logo);
+      mesh.name = 'front_user_name';
+      mesh.scale.set(scale, scale, 1);
+      mesh.position.set(-textW * scale / 2, maxH * 0.53 - textH * scale / 2, depth * 1.02);
+      root.add(mesh);
     }
 
     function resample(arr, n) {
@@ -623,6 +680,7 @@
       ui.status.textContent = 'STL exported. Open it in your slicer and scale to your desired souvenir size.';
     }
 
+    ui.userName.addEventListener('input', buildModel);
     ui.recordBtn.addEventListener('click', startRecording);
     ui.stopBtn.addEventListener('click', stopRecording);
     ui.playBtn.addEventListener('click', playRecording);
