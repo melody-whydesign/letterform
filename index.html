@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voice Wave Letter Ornament Generator</title>
+  <style>
+    :root {
+      --yellow: #ffd400;
+      --panel: #fffdf0;
+      --ink: #26303a;
+      --muted: #7a8490;
+      --blue: #0787ff;
+      --dark: #151515;
+      --line: #e7e2c8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--yellow);
+      overflow: hidden;
+    }
+
+    .app {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 385px 1fr;
+      gap: 22px;
+      padding: 18px;
+    }
+
+    aside {
+      background: linear-gradient(180deg, #fffefa 0%, #fff5c9 100%);
+      border-radius: 24px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.14);
+      padding: 26px;
+      overflow-y: auto;
+    }
+
+    main {
+      position: relative;
+      background: #f3f3f5;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
+    }
+
+    h1 {
+      margin: 0 0 20px;
+      font-size: 28px;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    h2 {
+      margin: 22px 0 10px;
+      font-size: 13px;
+      letter-spacing: 0.01em;
+      color: #59616b;
+    }
+
+    .tabs {
+      padding: 6px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.82);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+      margin-bottom: 26px;
+    }
+
+    .tab {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      background: transparent;
+      color: #6b7280;
+      text-align: left;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: white;
+      color: #202832;
+      box-shadow: 0 5px 16px rgba(0,0,0,0.08);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #5d6670;
+    }
+
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 13px;
+      background: white;
+      color: var(--ink);
+      font-weight: 800;
+      outline: none;
+    }
+
+    input[type="range"] { width: 100%; }
+
+    .button {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      min-height: 52px;
+      margin: 7px 0;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .12s ease, opacity .12s ease;
+    }
+
+    .button:active { transform: translateY(1px); }
+    .button:disabled { opacity: 0.38; cursor: not-allowed; }
+    .button.dark { background: linear-gradient(#202020, #101010); color: white; }
+    .button.blue { background: var(--blue); color: white; }
+    .button.light { background: white; color: #313944; border: 1px solid #eee8cb; }
+    .button.gray { background: linear-gradient(#b7b7bd, #8f8f99); color: white; }
+
+    .record-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 8px;
+      border-radius: 999px;
+      background: #ff4b45;
+    }
+
+    .timer {
+      text-align: center;
+      font-size: 34px;
+      font-weight: 950;
+      letter-spacing: -0.04em;
+      margin: 20px 0 10px;
+    }
+
+    .wave-wrap {
+      position: relative;
+      height: 105px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: white;
+      border: 1px solid #f0eddf;
+    }
+
+    #waveCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .crop-box {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 30%;
+      width: 40%;
+      background: rgba(7,135,255,0.14);
+      border: 2px solid #278fff;
+      border-top: 0;
+      border-bottom: 0;
+      cursor: move;
+    }
+
+    .crop-box::before,
+    .crop-box::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 10px;
+      cursor: ew-resize;
+    }
+    .crop-box::before { left: -6px; }
+    .crop-box::after { right: -6px; }
+
+    .crop-times {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .pill {
+      border-radius: 999px;
+      background: white;
+      padding: 9px 10px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 900;
+      color: #68727e;
+      border: 1px solid #f0eddf;
+    }
+
+    .small-note {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .viewer-label {
+      position: absolute;
+      left: 28px;
+      top: 24px;
+      z-index: 5;
+      padding: 11px 15px;
+      border-radius: 999px;
+      background: white;
+      font-size: 12px;
+      font-weight: 900;
+      color: #656e79;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+    }
+
+    #viewer {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .status {
+      min-height: 18px;
+      margin-top: 8px;
+      color: #5f6975;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .app { height: auto; grid-template-columns: 1fr; }
+      main { min-height: 560px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="tabs">
+        <button class="tab active">Create letter ornament</button>
+        <button class="tab">Voice wave pattern</button>
+      </div>
+
+      <h1>Create Ornament</h1>
+
+      <div class="row">
+        <div>
+          <label for="letterInput">Chosen letter</label>
+          <input id="letterInput" type="text" maxlength="1" value="A" />
+        </div>
+        <div>
+          <label for="fontWeight">Style</label>
+          <select id="fontWeight">
+            <option value="bold" selected>Bold</option>
+            <option value="regular">Regular</option>
+          </select>
+        </div>
+      </div>
+
+      <h2>Audio recording</h2>
+      <button id="startBtn" class="button dark"><span class="record-dot"></span>Start Recording</button>
+      <button id="stopBtn" class="button gray" disabled>Stop Recording</button>
+      <button id="playBtn" class="button dark" disabled>Play Cropped Audio</button>
+
+      <div id="timer" class="timer">00:00</div>
+
+      <div class="wave-wrap" id="waveWrap">
+        <canvas id="waveCanvas"></canvas>
+        <div class="crop-box" id="cropBox" title="Drag to move. Drag edges to resize."></div>
+      </div>
+
+      <div class="crop-times">
+        <div class="pill">Start: <span id="startTime">0.00s</span></div>
+        <div class="pill">End: <span id="endTime">0.00s</span></div>
+      </div>
+
+      <h2>3D settings</h2>
+      <label>Object height <span id="heightValue" style="float:right">7.0 cm</span></label>
+      <input id="heightRange" type="range" min="4" max="12" value="7" step="0.5" />
+
+      <label>Object depth <span id="depthValue" style="float:right">0.55 cm</span></label>
+      <input id="depthRange" type="range" min="0.25" max="1.2" value="0.55" step="0.05" />
+
+      <label>Wave relief height <span id="waveValue" style="float:right">0.18 cm</span></label>
+      <input id="waveRange" type="range" min="0.05" max="0.45" value="0.18" step="0.01" />
+
+      <button id="generateBtn" class="button blue" disabled>Generate 3D Ornament</button>
+      <button id="downloadBtn" class="button dark" disabled>Download STL</button>
+      <button id="resetBtn" class="button gray">Reset</button>
+
+      <div class="status" id="status">Open this page through GitHub Pages or another HTTPS host so the browser can use the microphone.</div>
+      <p class="small-note">This is a single-file prototype. It creates a 3D letter, adds raised soundwave ridges from the selected audio crop, and exports an STL file for slicer software.</p>
+    </aside>
+
+    <main>
+      <div class="viewer-label">Drag to rotate 360° • Letter ornament</div>
+      <canvas id="viewer"></canvas>
+    </main>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+    import { FontLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/FontLoader.js';
+    import { TextGeometry } from 'https://unpkg.com/three@0.160.0/examples/jsm/geometries/TextGeometry.js';
+    import { STLExporter } from 'https://unpkg.com/three@0.160.0/examples/jsm/exporters/STLExporter.js';
+
+    const $ = (id) => document.getElementById(id);
+
+    const startBtn = $('startBtn');
+    const stopBtn = $('stopBtn');
+    const playBtn = $('playBtn');
+    const generateBtn = $('generateBtn');
+    const downloadBtn = $('downloadBtn');
+    const resetBtn = $('resetBtn');
+    const letterInput = $('letterInput');
+    const fontWeight = $('fontWeight');
+    const timer = $('timer');
+    const statusEl = $('status');
+    const waveCanvas = $('waveCanvas');
+    const waveWrap = $('waveWrap');
+    const cropBox = $('cropBox');
+    const startTimeEl = $('startTime');
+    const endTimeEl = $('endTime');
+    const heightRange = $('heightRange');
+    const depthRange = $('depthRange');
+    const waveRange = $('waveRange');
+    const heightValue = $('heightValue');
+    const depthValue = $('depthValue');
+    const waveValue = $('waveValue');
+
+    let audioContext;
+    let mediaRecorder;
+    let mediaStream;
+    let chunks = [];
+    let audioBuffer = null;
+    let recordingStart = 0;
+    let timerId = null;
+    let cropStartRatio = 0.30;
+    let cropEndRatio = 0.70;
+    let waveformSamples = [];
+    let fontRegular = null;
+    let fontBold = null;
+
+    let scene, camera, renderer, controls, ornamentGroup;
+
+    initThree();
+    loadFonts();
+    resizeWaveCanvas();
+    drawEmptyWaveform();
+    updateCropBox();
+
+    window.addEventListener('resize', () => {
+      resizeRenderer();
+      resizeWaveCanvas();
+      drawWaveform();
+    });
+
+    async function loadFonts() {
+      const loader = new FontLoader();
+      status('Loading 3D font...');
+      fontRegular = await loader.loadAsync('https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_regular.typeface.json');
+      fontBold = await loader.loadAsync('https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json');
+      status('Ready. Record audio, crop the waveform, then generate the ornament.');
+      generatePlaceholderLetter();
+    }
+
+    function initThree() {
+      const canvas = $('viewer');
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf3f3f5);
+
+      camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+      camera.position.set(0, 1.5, 13);
+
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.8);
+      scene.add(hemi);
+
+      const key = new THREE.DirectionalLight(0xffffff, 3.2);
+      key.position.set(3, 6, 6);
+      key.castShadow = true;
+      scene.add(key);
+
+      const rim = new THREE.DirectionalLight(0xffffff, 1.4);
+      rim.position.set(-4, 2, -5);
+      scene.add(rim);
+
+      resizeRenderer();
+      animate();
+    }
+
+    function resizeRenderer() {
+      const canvas = $('viewer');
+      const rect = canvas.parentElement.getBoundingClientRect();
+      renderer.setSize(rect.width, rect.height, false);
+      camera.aspect = rect.width / rect.height;
+      camera.updateProjectionMatrix();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    startBtn.addEventListener('click', startRecording);
+    stopBtn.addEventListener('click', stopRecording);
+    playBtn.addEventListener('click', playCroppedAudio);
+    generateBtn.addEventListener('click', generateOrnament);
+    downloadBtn.addEventListener('click', downloadSTL);
+    resetBtn.addEventListener('click', resetAll);
+
+    letterInput.addEventListener('input', () => {
+      letterInput.value = (letterInput.value || 'A').slice(0, 1).toUpperCase();
+      if (!audioBuffer) generatePlaceholderLetter();
+    });
+    fontWeight.addEventListener('change', () => audioBuffer ? generateOrnament() : generatePlaceholderLetter());
+
+    heightRange.addEventListener('input', () => {
+      heightValue.textContent = `${Number(heightRange.value).toFixed(1)} cm`;
+      if (ornamentGroup) generateOrnament(false);
+    });
+    depthRange.addEventListener('input', () => {
+      depthValue.textContent = `${Number(depthRange.value).toFixed(2)} cm`;
+      if (ornamentGroup) generateOrnament(false);
+    });
+    waveRange.addEventListener('input', () => {
+      waveValue.textContent = `${Number(waveRange.value).toFixed(2)} cm`;
+      if (ornamentGroup) generateOrnament(false);
+    });
+
+    async function startRecording() {
+      try {
+        audioContext = audioContext || new AudioContext();
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(mediaStream);
+        chunks = [];
+
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = processRecording;
+        mediaRecorder.start();
+
+        recordingStart = performance.now();
+        timerId = setInterval(updateTimer, 100);
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        playBtn.disabled = true;
+        generateBtn.disabled = true;
+        downloadBtn.disabled = true;
+        status('Recording... speak or sing the tone you want to turn into raised 3D waves.');
+      } catch (err) {
+        status('Microphone access failed. Use HTTPS/GitHub Pages and allow microphone permission.');
+        console.error(err);
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
+      clearInterval(timerId);
+      stopBtn.disabled = true;
+      startBtn.disabled = false;
+      status('Processing recording...');
+    }
+
+    function updateTimer() {
+      const sec = Math.floor((performance.now() - recordingStart) / 1000);
+      timer.textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+    }
+
+    async function processRecording() {
+      const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      const arrayBuffer = await blob.arrayBuffer();
+      audioContext = audioContext || new AudioContext();
+      audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      cropStartRatio = 0.25;
+      cropEndRatio = 0.80;
+      extractWaveformSamples();
+      drawWaveform();
+      updateCropBox();
+      playBtn.disabled = false;
+      generateBtn.disabled = false;
+      status('Recording ready. Drag the blue selection to choose the part used for the ornament.');
+    }
+
+    function extractWaveformSamples() {
+      if (!audioBuffer) return;
+      const channel = audioBuffer.getChannelData(0);
+      const sampleCount = 240;
+      waveformSamples = [];
+      for (let i = 0; i < sampleCount; i++) {
+        const start = Math.floor(i * channel.length / sampleCount);
+        const end = Math.floor((i + 1) * channel.length / sampleCount);
+        let sum = 0;
+        for (let j = start; j < end; j++) sum += Math.abs(channel[j]);
+        waveformSamples.push(sum / Math.max(1, end - start));
+      }
+      const max = Math.max(...waveformSamples, 0.0001);
+      waveformSamples = waveformSamples.map(v => v / max);
+    }
+
+    async function playCroppedAudio() {
+      if (!audioBuffer) return;
+      audioContext = audioContext || new AudioContext();
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.destination);
+      const start = cropStartRatio * audioBuffer.duration;
+      const duration = Math.max(0.08, (cropEndRatio - cropStartRatio) * audioBuffer.duration);
+      source.start(0, start, duration);
+      status(`Playing selected crop: ${start.toFixed(2)}s to ${(start + duration).toFixed(2)}s.`);
+    }
+
+    function resizeWaveCanvas() {
+      const rect = waveWrap.getBoundingClientRect();
+      waveCanvas.width = Math.floor(rect.width * window.devicePixelRatio);
+      waveCanvas.height = Math.floor(rect.height * window.devicePixelRatio);
+    }
+
+    function drawEmptyWaveform() {
+      const ctx = waveCanvas.getContext('2d');
+      const w = waveCanvas.width;
+      const h = waveCanvas.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = '#b6b6b6';
+      ctx.setLineDash([3, 5]);
+      ctx.lineWidth = 2 * window.devicePixelRatio;
+      ctx.beginPath();
+      ctx.moveTo(0, h / 2);
+      ctx.lineTo(w, h / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function drawWaveform() {
+      const ctx = waveCanvas.getContext('2d');
+      const w = waveCanvas.width;
+      const h = waveCanvas.height;
+      ctx.clearRect(0, 0, w, h);
+      if (!waveformSamples.length) return drawEmptyWaveform();
+
+      const mid = h / 2;
+      const barW = w / waveformSamples.length;
+      for (let i = 0; i < waveformSamples.length; i++) {
+        const x = i * barW;
+        const amp = waveformSamples[i] * h * 0.42;
+        const selected = i / waveformSamples.length >= cropStartRatio && i / waveformSamples.length <= cropEndRatio;
+        ctx.fillStyle = selected ? '#0787ff' : '#c7c7c7';
+        ctx.fillRect(x, mid - amp, Math.max(1, barW * 0.45), amp * 2);
+      }
+    }
+
+    let cropDrag = null;
+    waveWrap.addEventListener('pointerdown', (e) => {
+      const rect = waveWrap.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const edge = 0.035;
+      if (Math.abs(x - cropStartRatio) < edge) cropDrag = 'left';
+      else if (Math.abs(x - cropEndRatio) < edge) cropDrag = 'right';
+      else if (x > cropStartRatio && x < cropEndRatio) cropDrag = { move: true, offset: x - cropStartRatio };
+      else {
+        cropStartRatio = Math.max(0, x - 0.15);
+        cropEndRatio = Math.min(1, x + 0.15);
+        cropDrag = { move: true, offset: 0.15 };
+      }
+      waveWrap.setPointerCapture(e.pointerId);
+      updateCropByPointer(e);
+    });
+
+    waveWrap.addEventListener('pointermove', (e) => {
+      if (!cropDrag) return;
+      updateCropByPointer(e);
+    });
+
+    waveWrap.addEventListener('pointerup', (e) => {
+      cropDrag = null;
+      waveWrap.releasePointerCapture(e.pointerId);
+      if (audioBuffer) generateOrnament(false);
+    });
+
+    function updateCropByPointer(e) {
+      const rect = waveWrap.getBoundingClientRect();
+      const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      const minWidth = 0.05;
+      if (cropDrag === 'left') cropStartRatio = Math.min(cropEndRatio - minWidth, x);
+      else if (cropDrag === 'right') cropEndRatio = Math.max(cropStartRatio + minWidth, x);
+      else if (cropDrag?.move) {
+        const width = cropEndRatio - cropStartRatio;
+        let newStart = x - cropDrag.offset;
+        newStart = Math.max(0, Math.min(1 - width, newStart));
+        cropStartRatio = newStart;
+        cropEndRatio = newStart + width;
+      }
+      updateCropBox();
+      drawWaveform();
+    }
+
+    function updateCropBox() {
+      cropBox.style.left = `${cropStartRatio * 100}%`;
+      cropBox.style.width = `${(cropEndRatio - cropStartRatio) * 100}%`;
+      const dur = audioBuffer ? audioBuffer.duration : 0;
+      startTimeEl.textContent = `${(cropStartRatio * dur).toFixed(2)}s`;
+      endTimeEl.textContent = `${(cropEndRatio * dur).toFixed(2)}s`;
+    }
+
+    function getCropSamples(count = 56) {
+      if (!waveformSamples.length) {
+        return Array.from({ length: count }, (_, i) => 0.35 + 0.25 * Math.sin(i * 0.45));
+      }
+      const start = Math.floor(cropStartRatio * waveformSamples.length);
+      const end = Math.max(start + 1, Math.floor(cropEndRatio * waveformSamples.length));
+      const crop = waveformSamples.slice(start, end);
+      const result = [];
+      for (let i = 0; i < count; i++) {
+        const idx = Math.floor(i * crop.length / count);
+        result.push(crop[Math.min(crop.length - 1, idx)] || 0);
+      }
+      return result;
+    }
+
+    function getFont() {
+      return fontWeight.value === 'bold' ? fontBold : fontRegular;
+    }
+
+    function clearOrnament() {
+      if (!ornamentGroup) return;
+      scene.remove(ornamentGroup);
+      ornamentGroup.traverse(obj => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) obj.material.dispose?.();
+      });
+      ornamentGroup = null;
+    }
+
+    function generatePlaceholderLetter() {
+      if (!fontRegular || !fontBold) return;
+      generateOrnament(false, true);
+    }
+
+    function generateOrnament(showStatus = true, placeholder = false) {
+      if (!getFont()) return;
+      clearOrnament();
+
+      const letter = (letterInput.value || 'A').slice(0, 1).toUpperCase();
+      const heightCm = Number(heightRange.value);
+      const depthCm = Number(depthRange.value);
+      const waveReliefCm = Number(waveRange.value);
+      const size = heightCm;
+      const depth = depthCm;
+
+      ornamentGroup = new THREE.Group();
+      ornamentGroup.name = 'voice-wave-letter-ornament';
+
+      const metal = new THREE.MeshStandardMaterial({
+        color: 0xd8dce2,
+        metalness: 0.82,
+        roughness: 0.24
+      });
+
+      const darkMetal = new THREE.MeshStandardMaterial({
+        color: 0x151515,
+        metalness: 0.9,
+        roughness: 0.20
+      });
+
+      const textGeo = new TextGeometry(letter, {
+        font: getFont(),
+        size,
+        height: depth,
+        curveSegments: 18,
+        bevelEnabled: true,
+        bevelThickness: 0.065,
+        bevelSize: 0.055,
+        bevelSegments: 4
+      });
+      textGeo.computeBoundingBox();
+      const box = textGeo.boundingBox;
+      const textW = box.max.x - box.min.x;
+      const textH = box.max.y - box.min.y;
+      textGeo.translate(-box.min.x - textW / 2, -box.min.y - textH / 2, -depth / 2);
+
+      const letterMesh = new THREE.Mesh(textGeo, metal);
+      letterMesh.castShadow = true;
+      letterMesh.receiveShadow = true;
+      ornamentGroup.add(letterMesh);
+
+      // Top loop so the object can be used as a hanging ornament.
+      const ringOuter = Math.max(0.42, heightCm * 0.075);
+      const ringTube = Math.max(0.085, heightCm * 0.018);
+      const ringGeo = new THREE.TorusGeometry(ringOuter, ringTube, 18, 72);
+      const ring = new THREE.Mesh(ringGeo, metal);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(0, textH / 2 + ringOuter * 1.20, 0);
+      ornamentGroup.add(ring);
+
+      // Soundwave relief: raised horizontal/vertical ridges attached to the front face.
+      // The wave is built from the selected crop of the recorded audio.
+      const samples = getCropSamples(70);
+      const maxW = Math.max(textW * 0.94, 1);
+      const frontZ = depth / 2 + waveReliefCm / 2 + 0.01;
+      const ridgeCount = samples.length;
+      const gap = textH / (ridgeCount + 1);
+      const ridgeThickness = Math.max(0.035, heightCm * 0.010);
+
+      for (let i = 0; i < ridgeCount; i++) {
+        const normalized = placeholder ? 0.25 + 0.35 * Math.abs(Math.sin(i * 0.32)) : samples[i];
+        const ridgeW = Math.max(maxW * 0.12, maxW * (0.18 + normalized * 0.78));
+        const y = -textH / 2 + gap * (i + 1);
+        const ridgeGeo = new THREE.BoxGeometry(ridgeW, ridgeThickness, waveReliefCm);
+        const ridge = new THREE.Mesh(ridgeGeo, i % 7 === 0 ? darkMetal : metal);
+        ridge.position.set(0, y, frontZ);
+        ridge.castShadow = true;
+        ornamentGroup.add(ridge);
+      }
+
+      // Add a subtle back plate that makes thin letters printable and gives ridges support.
+      const plateShape = new THREE.Shape();
+      const plateW = Math.max(textW * 1.08, heightCm * 0.62);
+      const plateH = textH * 1.06;
+      const r = Math.min(0.35, plateW * 0.08);
+      roundedRect(plateShape, -plateW / 2, -plateH / 2, plateW, plateH, r);
+      const plateGeo = new THREE.ExtrudeGeometry(plateShape, {
+        depth: Math.max(0.12, depth * 0.30),
+        bevelEnabled: true,
+        bevelSize: 0.025,
+        bevelThickness: 0.025,
+        bevelSegments: 2
+      });
+      plateGeo.translate(0, 0, -depth / 2 - Math.max(0.12, depth * 0.30));
+      const plate = new THREE.Mesh(plateGeo, new THREE.MeshStandardMaterial({
+        color: 0xcfd3d8,
+        metalness: 0.75,
+        roughness: 0.35,
+        transparent: true,
+        opacity: 0.45
+      }));
+      plate.receiveShadow = true;
+      ornamentGroup.add(plate);
+
+      scene.add(ornamentGroup);
+      centerAndFrame(ornamentGroup);
+      downloadBtn.disabled = false;
+      if (!placeholder) generateBtn.disabled = false;
+      if (showStatus) status('3D ornament generated. Rotate the preview or download the STL for slicing.');
+    }
+
+    function roundedRect(shape, x, y, w, h, r) {
+      shape.moveTo(x + r, y);
+      shape.lineTo(x + w - r, y);
+      shape.quadraticCurveTo(x + w, y, x + w, y + r);
+      shape.lineTo(x + w, y + h - r);
+      shape.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      shape.lineTo(x + r, y + h);
+      shape.quadraticCurveTo(x, y + h, x, y + h - r);
+      shape.lineTo(x, y + r);
+      shape.quadraticCurveTo(x, y, x + r, y);
+    }
+
+    function centerAndFrame(obj) {
+      const box = new THREE.Box3().setFromObject(obj);
+      const center = box.getCenter(new THREE.Vector3());
+      obj.position.sub(center);
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      camera.position.set(0, maxDim * 0.12, maxDim * 1.85);
+      camera.lookAt(0, 0, 0);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+
+    function downloadSTL() {
+      if (!ornamentGroup) return;
+      const exporter = new STLExporter();
+      const stlString = exporter.parse(ornamentGroup, { binary: false });
+      const blob = new Blob([stlString], { type: 'model/stl' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `voice-wave-letter-${(letterInput.value || 'A').toUpperCase()}.stl`;
+      a.click();
+      URL.revokeObjectURL(url);
+      status('STL downloaded. Open it in your slicer before sending it to a 3D printer.');
+    }
+
+    function resetAll() {
+      chunks = [];
+      audioBuffer = null;
+      waveformSamples = [];
+      cropStartRatio = 0.30;
+      cropEndRatio = 0.70;
+      timer.textContent = '00:00';
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      playBtn.disabled = true;
+      generateBtn.disabled = true;
+      downloadBtn.disabled = true;
+      updateCropBox();
+      drawEmptyWaveform();
+      generatePlaceholderLetter();
+      status('Reset complete. Record a new voice sample to create a fresh soundwave pattern.');
+    }
+
+    function status(message) {
+      statusEl.textContent = message;
+    }
+  </script>
+</body>
+</html>
