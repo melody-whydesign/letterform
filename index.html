@@ -203,13 +203,11 @@
     const root = new THREE.Group();
     scene.add(root);
 
+    const darkBrown = 0x3a2018;
     const mats = {
-      darkWood: new THREE.MeshStandardMaterial({ color: 0x3a2018, roughness: 0.72, metalness: 0.02 }),
-      redWood: new THREE.MeshStandardMaterial({ color: 0x6b3327, roughness: 0.78, metalness: 0.02 }),
-      warmWood: new THREE.MeshStandardMaterial({ color: 0x9a6653, roughness: 0.74, metalness: 0.02 }),
-      paleWood: new THREE.MeshStandardMaterial({ color: 0xd7c7aa, roughness: 0.7, metalness: 0.02 }),
-      black: new THREE.MeshStandardMaterial({ color: 0x202020, roughness: 0.6 }),
-      base: new THREE.MeshStandardMaterial({ color: 0x4a3228, roughness: 0.8 })
+      dark: new THREE.MeshStandardMaterial({ color: darkBrown, roughness: 0.74, metalness: 0.02 }),
+      base: new THREE.MeshStandardMaterial({ color: darkBrown, roughness: 0.8 }),
+      logo: new THREE.MeshStandardMaterial({ color: darkBrown, roughness: 0.7 })
     };
 
     let hasRecording = false;
@@ -299,31 +297,29 @@
       const voiceStripeW = Math.max(0.085, spacing * 0.58);
 
       root.add(box(width + 0.55, maxH + 0.55, depth * 0.42, mats.base, 0, (maxH + 0.55) / 2, -depth * 0.35, 'solid_back_plate'));
-      root.add(box(width + 0.85, 0.28, depth * 1.8, mats.black, 0, 0.14, depth * 0.12, 'bottom_foot'));
+      root.add(box(width + 0.85, 0.28, depth * 1.8, mats.dark, 0, 0.14, depth * 0.12, 'bottom_foot'));
 
       for (let i = 0; i < count + 5; i++) {
         const x = -width / 2 - spacing * 2 + i * spacing;
         const h = maxH + 0.35;
-        root.add(box(stripeW * 0.55, h, depth * 1.25, mats.darkWood, x, h / 2 + 0.18, depth * 0.18, 'regular_long_stripe'));
+        root.add(box(stripeW * 0.55, h, depth * 1.25, mats.dark, x, h / 2 + 0.18, depth * 0.18, 'regular_long_stripe'));
       }
 
       if (hasRecording && waveform.length) {
-        const palette = [mats.darkWood, mats.redWood, mats.warmWood, mats.paleWood];
         const values = resample(waveform, count);
         for (let i = 0; i < count; i++) {
           const x = -width / 2 + spacing / 2 + i * spacing;
           const amp = Math.min(1, values[i] * scale);
           const h = minH + amp * (maxH - minH);
-          const mat = palette[i % palette.length];
-          const zJitter = 0.23 + (i % 3) * 0.015;
-          root.add(box(voiceStripeW, h, depth * 1.45, mat, x, h / 2 + 0.32, zJitter, 'voice_wave_stripe'));
+          const landmarkIndex = i % 5;
+          addHongKongLandmark(root, landmarkIndex, x, h, voiceStripeW, depth);
         }
       }
 
       for (const y of [1.45, 1.68, 1.92]) {
-        root.add(box(width + 0.35, 0.055, depth * 1.55, mats.black, 0, y, depth * 0.36, 'horizontal_band'));
+        root.add(box(width + 0.35, 0.055, depth * 1.55, mats.dark, 0, y, depth * 0.36, 'horizontal_band'));
       }
-      root.add(box(width + 0.2, 0.055, depth * 1.52, mats.paleWood, 0, 1.28, depth * 0.38, 'cream_band'));
+      root.add(box(width + 0.2, 0.055, depth * 1.52, mats.dark, 0, 1.28, depth * 0.38, 'lower_detail_band'));
 
       buildBackLogo();
       drawWaveCanvas();
@@ -346,7 +342,7 @@
             depth: 0.08,
             bevelEnabled: false
           });
-          const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xf8d000 }));
+          const mesh = new THREE.Mesh(geo, mats.logo);
           group.add(mesh);
         });
       });
@@ -361,6 +357,42 @@
       group.position.set(0, 3, -0.25);
 
       root.add(group);
+    }
+
+    function addHongKongLandmark(group, type, x, h, w, depth) {
+      const z = depth * 0.35;
+      const d = depth * 1.55;
+      const baseY = 0.32;
+      const bodyH = Math.max(0.35, h);
+
+      // These are simplified 3D-printable silhouettes inspired by Hong Kong landmarks:
+      // Legislative Council, IFC, ICC, Bank of China Tower, and HSBC Building.
+      if (type === 0) {
+        // Legislative Council: lower civic block with a small crown.
+        group.add(box(w * 1.45, bodyH * 0.72, d, mats.dark, x, baseY + bodyH * 0.36, z, 'hk_legco_body'));
+        group.add(box(w * 0.95, bodyH * 0.18, d, mats.dark, x, baseY + bodyH * 0.82, z, 'hk_legco_roof'));
+        group.add(box(w * 0.22, bodyH * 0.16, d, mats.dark, x, baseY + bodyH * 0.99, z, 'hk_legco_crown'));
+      } else if (type === 1) {
+        // IFC: slim rounded tower impression.
+        group.add(box(w * 0.82, bodyH * 0.92, d, mats.dark, x, baseY + bodyH * 0.46, z, 'hk_ifc_tower'));
+        group.add(box(w * 0.55, bodyH * 0.08, d, mats.dark, x, baseY + bodyH * 0.96, z, 'hk_ifc_cap'));
+      } else if (type === 2) {
+        // ICC: tall stepped tower.
+        group.add(box(w * 1.0, bodyH * 0.78, d, mats.dark, x, baseY + bodyH * 0.39, z, 'hk_icc_lower'));
+        group.add(box(w * 0.72, bodyH * 0.2, d, mats.dark, x, baseY + bodyH * 0.88, z, 'hk_icc_upper'));
+        group.add(box(w * 0.42, bodyH * 0.08, d, mats.dark, x, baseY + bodyH * 1.02, z, 'hk_icc_tip'));
+      } else if (type === 3) {
+        // Bank of China Tower: angular triangular profile made from stacked narrowing blocks.
+        group.add(box(w * 1.25, bodyH * 0.28, d, mats.dark, x, baseY + bodyH * 0.14, z, 'hk_boc_1'));
+        group.add(box(w * 0.95, bodyH * 0.28, d, mats.dark, x, baseY + bodyH * 0.42, z, 'hk_boc_2'));
+        group.add(box(w * 0.65, bodyH * 0.28, d, mats.dark, x, baseY + bodyH * 0.70, z, 'hk_boc_3'));
+        group.add(box(w * 0.28, bodyH * 0.2, d, mats.dark, x, baseY + bodyH * 0.94, z, 'hk_boc_tip'));
+      } else {
+        // HSBC: broad stepped frame.
+        group.add(box(w * 1.55, bodyH * 0.34, d, mats.dark, x, baseY + bodyH * 0.17, z, 'hk_hsbc_base'));
+        group.add(box(w * 1.2, bodyH * 0.34, d, mats.dark, x, baseY + bodyH * 0.51, z, 'hk_hsbc_mid'));
+        group.add(box(w * 0.85, bodyH * 0.25, d, mats.dark, x, baseY + bodyH * 0.82, z, 'hk_hsbc_top'));
+      }
     }
 
     function resample(arr, n) {
