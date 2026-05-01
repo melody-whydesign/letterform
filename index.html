@@ -406,8 +406,13 @@
       }
 
       const scale = targetW / 238;
-      logoGroup.scale.set(scale, -scale, 1);
-      logoGroup.position.set(-targetW / 2, maxH * 0.53 + targetH / 2, -depth * 0.66);
+      // FIX: correct orientation (no vertical flip)
+      logoGroup.scale.set(scale, scale, 1);
+
+      // place on back side
+      logoGroup.rotation.y = Math.PI; 
+      logoGroup.position.set(-targetW / 2, maxH * 0.53 - targetH / 2, -depth * 0.7);
+
       root.add(logoGroup);
     }
 
@@ -422,17 +427,28 @@
         curveSegments: 8,
         bevelEnabled: false
       });
+
       geometry.computeBoundingBox();
       const box3 = geometry.boundingBox;
       const textW = box3.max.x - box3.min.x;
       const textH = box3.max.y - box3.min.y;
-      const maxTextW = width * 0.48;
+
+      // FIX: enforce max width + better centering
+      const maxTextW = width * 0.55;
       const scale = textW > maxTextW ? maxTextW / textW : 1;
 
       const mesh = new THREE.Mesh(geometry, mats.logo);
       mesh.name = 'front_user_name';
+
       mesh.scale.set(scale, scale, 1);
-      mesh.position.set(-textW * scale / 2, maxH * 0.53 - textH * scale / 2, depth * 1.02);
+
+      // FIX: proper centering (use bounding box min offset)
+      mesh.position.set(
+        -(textW * scale) / 2,
+        maxH * 0.53 - (textH * scale) / 2,
+        depth * 1.02
+      );
+
       root.add(mesh);
     }
 
