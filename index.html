@@ -245,7 +245,7 @@
       paleWood: new THREE.MeshStandardMaterial({ color: 0xd7c7aa, roughness: 0.7, metalness: 0.02 }),
       black: new THREE.MeshStandardMaterial({ color: 0x202020, roughness: 0.6 }),
       base: new THREE.MeshStandardMaterial({ color: 0x4a3228, roughness: 0.8 }),
-      logo: new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.5 })
+      logo: new THREE.MeshStandardMaterial({ color: 0xf8d000, roughness: 0.5, side: THREE.DoubleSide })
     };
 
     let hasRecording = false;
@@ -386,7 +386,7 @@
     function buildBackLogo(width, maxH, depth) {
       const targetH = 3.55;
       const targetW = targetH * (238 / 267);
-      const reliefDepth = depth * 0.28;
+      const reliefDepth = depth * 0.06; // same shallow relief as the name
       const loader = new SVGLoader();
       const svgData = loader.parse(LOGO_SVG);
       const logoGroup = new THREE.Group();
@@ -407,13 +407,11 @@
 
       const scale = targetW / 238;
 
-      // Back-side relief: protrudes from the back, but reads correctly when viewed from behind.
-      // SVG y-axis is downward, so Y is flipped. X is also flipped to cancel the mirror from rotation.y.
+      // Back logo: upright when viewed from the back, centered on the souvenir.
+      // SVG uses top-left coordinates, so Y is flipped. X is flipped to cancel the mirror created by the back-face rotation.
       logoGroup.scale.set(-scale, -scale, 1);
       logoGroup.rotation.y = Math.PI;
-
-      // Center on the souvenir back face.
-      logoGroup.position.set(targetW / 2, maxH * 0.53 + targetH / 2, -depth * 0.7);
+      logoGroup.position.set(targetW / 2, maxH * 0.53 + targetH / 2, -depth * 0.74);
 
       root.add(logoGroup);
     }
@@ -422,7 +420,7 @@
       const name = (ui.userName.value || '').trim().toUpperCase();
       if (!name || !loadedFont) return;
 
-      const nameDepth = depth * 0.28; // same visual relief depth as the logo
+      const nameDepth = depth * 0.06; // same shallow relief depth as the back logo
       const geometry = new TextGeometry(name, {
         font: loadedFont,
         size: 0.42,
@@ -447,7 +445,7 @@
       mesh.position.set(
         -(textW * scale) / 2,
         maxH * 0.53 - (textH * scale) / 2,
-        depth * 0.86
+        depth * 0.54
       );
 
       root.add(mesh);
