@@ -333,7 +333,7 @@
       const loader = new SVGLoader();
       const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 200">
-  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Helvetica, Arial" font-size="120" fill="#f8d000">LEGCO</text>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Helvetica, Arial" font-size="140" fill="#f8d000">LEGCO</text>
 </svg>`;
 
       const data = loader.parse(svg);
@@ -343,7 +343,7 @@
         const shapes = SVGLoader.createShapes(path);
         shapes.forEach(shape => {
           const geo = new THREE.ExtrudeGeometry(shape, {
-            depth: 0.02,
+            depth: 0.08,
             bevelEnabled: false
           });
           const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xf8d000 }));
@@ -351,9 +351,15 @@
         });
       });
 
-      group.scale.set(0.01, -0.01, 1);
+      // scale UP so it is visible
+      group.scale.set(0.02, -0.02, 1);
+
+      // rotate to face backward correctly
       group.rotation.y = Math.PI;
-      group.position.set(0, 3, -0.5);
+
+      // IMPORTANT: place slightly OUTSIDE the back surface so it's visible
+      group.position.set(0, 3, -0.25);
+
       root.add(group);
     }
 
