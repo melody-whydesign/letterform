@@ -282,6 +282,8 @@
     }
 
     function buildModel() {
+      // add back logo later
+
       updateLabels();
       clearGroup(root);
 
@@ -322,7 +324,36 @@
       }
       root.add(box(width + 0.2, 0.055, depth * 1.52, mats.paleWood, 0, 1.28, depth * 0.38, 'cream_band'));
 
+      buildBackLogo();
       drawWaveCanvas();
+    }
+
+    function buildBackLogo() {
+      const loader = new THREE.SVGLoader();
+      const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 200">
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Helvetica, Arial" font-size="120" fill="#f8d000">LEGCO</text>
+</svg>`;
+
+      const data = loader.parse(svg);
+      const group = new THREE.Group();
+
+      data.paths.forEach(path => {
+        const shapes = THREE.SVGLoader.createShapes(path);
+        shapes.forEach(shape => {
+          const geo = new THREE.ExtrudeGeometry(shape, {
+            depth: 0.02,
+            bevelEnabled: false
+          });
+          const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xf8d000 }));
+          group.add(mesh);
+        });
+      });
+
+      group.scale.set(0.01, -0.01, 1);
+      group.rotation.y = Math.PI;
+      group.position.set(0, 3, -0.5);
+      root.add(group);
     }
 
     function resample(arr, n) {
