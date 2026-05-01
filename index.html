@@ -3,835 +3,518 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Voice Wave Letter Ornament Generator</title>
+  <title>Voice Wave Souvenir Generator</title>
   <style>
     :root {
-      --yellow: #ffd400;
-      --panel: #fffdf0;
-      --ink: #26303a;
-      --muted: #7a8490;
-      --blue: #0787ff;
-      --dark: #151515;
-      --line: #e7e2c8;
+      --bg: #f5efe7;
+      --panel: #fffaf3;
+      --ink: #2b211c;
+      --muted: #7c6f66;
+      --accent: #7a3f2d;
+      --line: #ded0c3;
     }
-
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
-      min-height: 100vh;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--ink);
-      background: var(--yellow);
-      overflow: hidden;
+      background: radial-gradient(circle at top left, #fff8ee, var(--bg));
     }
-
-    .app {
-      width: 100vw;
-      height: 100vh;
+    header {
+      padding: 24px clamp(16px, 4vw, 44px) 12px;
       display: grid;
-      grid-template-columns: 385px 1fr;
-      gap: 22px;
-      padding: 18px;
+      gap: 8px;
     }
-
-    aside {
-      background: linear-gradient(180deg, #fffefa 0%, #fff5c9 100%);
-      border-radius: 24px;
-      box-shadow: 0 18px 45px rgba(0,0,0,0.14);
-      padding: 26px;
-      overflow-y: auto;
-    }
-
+    h1 { margin: 0; font-size: clamp(26px, 4vw, 44px); letter-spacing: -0.04em; }
+    p { margin: 0; color: var(--muted); line-height: 1.5; max-width: 940px; }
     main {
-      position: relative;
-      background: #f3f3f5;
-      border-radius: 24px;
-      overflow: hidden;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
-    }
-
-    h1 {
-      margin: 0 0 20px;
-      font-size: 28px;
-      letter-spacing: -0.04em;
-      line-height: 1;
-    }
-
-    h2 {
-      margin: 22px 0 10px;
-      font-size: 13px;
-      letter-spacing: 0.01em;
-      color: #59616b;
-    }
-
-    .tabs {
-      padding: 6px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.82);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-      margin-bottom: 26px;
-    }
-
-    .tab {
-      width: 100%;
-      border: 0;
-      border-radius: 12px;
-      padding: 14px 16px;
-      background: transparent;
-      color: #6b7280;
-      text-align: left;
-      font-weight: 800;
-      cursor: pointer;
-    }
-
-    .tab.active {
-      background: white;
-      color: #202832;
-      box-shadow: 0 5px 16px rgba(0,0,0,0.08);
-    }
-
-    .row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      grid-template-columns: 380px 1fr;
+      gap: 18px;
+      padding: 16px clamp(16px, 4vw, 44px) 36px;
+      min-height: calc(100vh - 120px);
     }
-
-    label {
-      display: block;
-      margin-bottom: 7px;
-      font-size: 12px;
-      font-weight: 800;
-      color: #5d6670;
-    }
-
-    input[type="text"], input[type="number"], select {
-      width: 100%;
+    .panel {
+      background: rgba(255, 250, 243, 0.9);
       border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 12px 13px;
-      background: white;
-      color: var(--ink);
-      font-weight: 800;
-      outline: none;
+      border-radius: 24px;
+      box-shadow: 0 18px 60px rgba(80, 47, 28, 0.12);
     }
-
+    .controls { padding: 18px; display: grid; gap: 14px; align-content: start; }
+    .viewer { position: relative; min-height: 620px; overflow: hidden; }
+    #scene { width: 100%; height: 100%; min-height: 620px; display: block; }
+    .row { display: grid; gap: 8px; }
+    .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    label { font-size: 13px; font-weight: 700; color: #4b382f; }
     input[type="range"] { width: 100%; }
-
-    .button {
+    input[type="file"] {
       width: 100%;
+      border: 1px dashed #bfae9f;
+      padding: 10px;
+      border-radius: 14px;
+      background: #fffdf9;
+    }
+    button, .fileButton {
+      appearance: none;
       border: 0;
-      border-radius: 12px;
-      min-height: 52px;
-      margin: 7px 0;
-      font-weight: 900;
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: var(--ink);
+      color: white;
+      font-weight: 800;
       cursor: pointer;
-      transition: transform .12s ease, opacity .12s ease;
+      transition: transform .15s ease, opacity .15s ease;
     }
-
-    .button:active { transform: translateY(1px); }
-    .button:disabled { opacity: 0.38; cursor: not-allowed; }
-    .button.dark { background: linear-gradient(#202020, #101010); color: white; }
-    .button.blue { background: var(--blue); color: white; }
-    .button.light { background: white; color: #313944; border: 1px solid #eee8cb; }
-    .button.gray { background: linear-gradient(#b7b7bd, #8f8f99); color: white; }
-
-    .record-dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      margin-right: 8px;
-      border-radius: 999px;
-      background: #ff4b45;
-    }
-
-    .timer {
-      text-align: center;
-      font-size: 34px;
-      font-weight: 950;
-      letter-spacing: -0.04em;
-      margin: 20px 0 10px;
-    }
-
-    .wave-wrap {
-      position: relative;
-      height: 105px;
-      border-radius: 18px;
-      overflow: hidden;
-      background: white;
-      border: 1px solid #f0eddf;
-    }
-
-    #waveCanvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    .crop-box {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 30%;
-      width: 40%;
-      background: rgba(7,135,255,0.14);
-      border: 2px solid #278fff;
-      border-top: 0;
-      border-bottom: 0;
-      cursor: move;
-    }
-
-    .crop-box::before,
-    .crop-box::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 10px;
-      cursor: ew-resize;
-    }
-    .crop-box::before { left: -6px; }
-    .crop-box::after { right: -6px; }
-
-    .crop-times {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .pill {
-      border-radius: 999px;
-      background: white;
-      padding: 9px 10px;
-      text-align: center;
-      font-size: 12px;
-      font-weight: 900;
-      color: #68727e;
-      border: 1px solid #f0eddf;
-    }
-
-    .small-note {
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.45;
-    }
-
-    .viewer-label {
-      position: absolute;
-      left: 28px;
-      top: 24px;
-      z-index: 5;
-      padding: 11px 15px;
-      border-radius: 999px;
-      background: white;
-      font-size: 12px;
-      font-weight: 900;
-      color: #656e79;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.06);
-    }
-
-    #viewer {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    button.secondary { background: #8f7666; }
+    button.export { background: var(--accent); }
     .status {
-      min-height: 18px;
-      margin-top: 8px;
-      color: #5f6975;
-      font-size: 12px;
-      font-weight: 700;
+      padding: 12px;
+      border-radius: 14px;
+      background: #f1e4d8;
+      color: #4c382e;
+      font-size: 13px;
       line-height: 1.4;
     }
-
-    @media (max-width: 900px) {
-      body { overflow: auto; }
-      .app { height: auto; grid-template-columns: 1fr; }
-      main { min-height: 560px; }
+    .swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .swatch {
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,.1);
+    }
+    .hint { font-size: 12px; color: var(--muted); }
+    .badge {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      background: rgba(255, 250, 243, .9);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 9px 12px;
+      color: #59483d;
+      font-size: 12px;
+      backdrop-filter: blur(10px);
+    }
+    @media (max-width: 980px) {
+      main { grid-template-columns: 1fr; }
+      .viewer, #scene { min-height: 520px; }
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <aside>
-      <div class="tabs">
-        <button class="tab active">Create letter ornament</button>
-        <button class="tab">Voice wave pattern</button>
-      </div>
+  <header>
+    <h1>Voice Wave Souvenir Generator</h1>
+    <p>Record a voice, turn the waveform into irregular brown facade strips, add a raised logo relief, preview the 3D object, and export an STL for 3D printing. The regular long stripes form the base rhythm; the shorter brown strips encode the audio.</p>
+  </header>
 
-      <h1>Create Ornament</h1>
+  <main>
+    <section class="panel controls">
+      <div class="row">
+        <label>1. Record voice</label>
+        <div class="twocol">
+          <button id="recordBtn">Record</button>
+          <button id="stopBtn" class="secondary" disabled>Stop</button>
+        </div>
+        <div id="status" class="status">Ready. Click Record and speak for 3–10 seconds.</div>
+      </div>
 
       <div class="row">
-        <div>
-          <label for="letterInput">Chosen letter</label>
-          <input id="letterInput" type="text" maxlength="1" value="A" />
+        <label>Or upload audio</label>
+        <input id="audioFile" type="file" accept="audio/*" />
+      </div>
+
+      <div class="twocol">
+        <div class="row">
+          <label for="stripeCount">Voice strips: <span id="stripeCountVal">48</span></label>
+          <input id="stripeCount" type="range" min="20" max="90" value="48" />
         </div>
-        <div>
-          <label for="fontWeight">Style</label>
-          <select id="fontWeight">
-            <option value="bold" selected>Bold</option>
-            <option value="regular">Regular</option>
-          </select>
+        <div class="row">
+          <label for="heightScale">Wave height: <span id="heightScaleVal">1.00</span></label>
+          <input id="heightScale" type="range" min="0.4" max="1.8" value="1" step="0.05" />
         </div>
       </div>
 
-      <h2>Audio recording</h2>
-      <button id="startBtn" class="button dark"><span class="record-dot"></span>Start Recording</button>
-      <button id="stopBtn" class="button gray" disabled>Stop Recording</button>
-      <button id="playBtn" class="button dark" disabled>Play Cropped Audio</button>
-
-      <div id="timer" class="timer">00:00</div>
-
-      <div class="wave-wrap" id="waveWrap">
-        <canvas id="waveCanvas"></canvas>
-        <div class="crop-box" id="cropBox" title="Drag to move. Drag edges to resize."></div>
+      <div class="twocol">
+        <div class="row">
+          <label for="baseDepth">Print depth: <span id="baseDepthVal">0.35</span></label>
+          <input id="baseDepth" type="range" min="0.18" max="0.8" value="0.35" step="0.01" />
+        </div>
+        <div class="row">
+          <label for="logoSize">Logo size: <span id="logoSizeVal">1.25</span></label>
+          <input id="logoSize" type="range" min="0.6" max="2.4" value="1.25" step="0.05" />
+        </div>
       </div>
 
-      <div class="crop-times">
-        <div class="pill">Start: <span id="startTime">0.00s</span></div>
-        <div class="pill">End: <span id="endTime">0.00s</span></div>
+      <div class="row">
+        <label>2. Upload logo for raised relief</label>
+        <input id="logoFile" type="file" accept="image/png,image/jpeg,image/svg+xml" />
+        <div class="hint">Use a high-contrast logo image, preferably transparent PNG or SVG. STL does not preserve printed colors, so this page converts dark/opaque pixels into shallow raised geometry.</div>
       </div>
 
-      <h2>3D settings</h2>
-      <label>Object height <span id="heightValue" style="float:right">7.0 cm</span></label>
-      <input id="heightRange" type="range" min="4" max="12" value="7" step="0.5" />
+      <div class="row">
+        <label>Color palette preview</label>
+        <div class="swatches">
+          <div class="swatch" style="background:#3a2018"></div>
+          <div class="swatch" style="background:#6b3327"></div>
+          <div class="swatch" style="background:#9a6653"></div>
+          <div class="swatch" style="background:#d7c7aa"></div>
+          <div class="swatch" style="background:#202020"></div>
+        </div>
+      </div>
 
-      <label>Object depth <span id="depthValue" style="float:right">0.55 cm</span></label>
-      <input id="depthRange" type="range" min="0.25" max="1.2" value="0.55" step="0.05" />
+      <div class="twocol">
+        <button id="randomBtn" class="secondary">Demo Wave</button>
+        <button id="exportBtn" class="export">Export STL</button>
+      </div>
 
-      <label>Wave relief height <span id="waveValue" style="float:right">0.18 cm</span></label>
-      <input id="waveRange" type="range" min="0.05" max="0.45" value="0.18" step="0.01" />
+      <div class="hint">Print tip: export in millimeters from your slicer. For a stronger souvenir, keep a 3–5 mm minimum base thickness and avoid very thin logo lines.</div>
+    </section>
 
-      <button id="generateBtn" class="button blue" disabled>Generate 3D Ornament</button>
-      <button id="downloadBtn" class="button dark" disabled>Download STL</button>
-      <button id="resetBtn" class="button gray">Reset</button>
-
-      <div class="status" id="status">Open this page through GitHub Pages or another HTTPS host so the browser can use the microphone.</div>
-      <p class="small-note">This is a single-file prototype. It creates a 3D letter, adds raised soundwave ridges from the selected audio crop, and exports an STL file for slicer software.</p>
-    </aside>
-
-    <main>
-      <div class="viewer-label">Drag to rotate 360° • Letter ornament</div>
-      <canvas id="viewer"></canvas>
-    </main>
-  </div>
+    <section class="panel viewer">
+      <canvas id="scene"></canvas>
+      <div class="badge">Drag to rotate · Scroll to zoom</div>
+    </section>
+  </main>
 
   <script type="module">
     import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
     import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
-    import { FontLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/FontLoader.js';
-    import { TextGeometry } from 'https://unpkg.com/three@0.160.0/examples/jsm/geometries/TextGeometry.js';
     import { STLExporter } from 'https://unpkg.com/three@0.160.0/examples/jsm/exporters/STLExporter.js';
 
-    const $ = (id) => document.getElementById(id);
+    const canvas = document.querySelector('#scene');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-    const startBtn = $('startBtn');
-    const stopBtn = $('stopBtn');
-    const playBtn = $('playBtn');
-    const generateBtn = $('generateBtn');
-    const downloadBtn = $('downloadBtn');
-    const resetBtn = $('resetBtn');
-    const letterInput = $('letterInput');
-    const fontWeight = $('fontWeight');
-    const timer = $('timer');
-    const statusEl = $('status');
-    const waveCanvas = $('waveCanvas');
-    const waveWrap = $('waveWrap');
-    const cropBox = $('cropBox');
-    const startTimeEl = $('startTime');
-    const endTimeEl = $('endTime');
-    const heightRange = $('heightRange');
-    const depthRange = $('depthRange');
-    const waveRange = $('waveRange');
-    const heightValue = $('heightValue');
-    const depthValue = $('depthValue');
-    const waveValue = $('waveValue');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf7efe6);
 
-    let audioContext;
-    let mediaRecorder;
-    let mediaStream;
-    let chunks = [];
-    let audioBuffer = null;
-    let recordingStart = 0;
-    let timerId = null;
-    let cropStartRatio = 0.30;
-    let cropEndRatio = 0.70;
-    let waveformSamples = [];
-    let fontRegular = null;
-    let fontBold = null;
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.set(5.8, 4.3, 8.4);
 
-    let scene, camera, renderer, controls, ornamentGroup;
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0, 2.1, 0);
 
-    initThree();
-    loadFonts();
-    resizeWaveCanvas();
-    drawEmptyWaveform();
-    updateCropBox();
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x664433, 2.1));
+    const key = new THREE.DirectionalLight(0xffffff, 2.2);
+    key.position.set(3, 7, 5);
+    scene.add(key);
 
-    window.addEventListener('resize', () => {
-      resizeRenderer();
-      resizeWaveCanvas();
-      drawWaveform();
+    const root = new THREE.Group();
+    scene.add(root);
+
+    const mats = {
+      darkWood: new THREE.MeshStandardMaterial({ color: 0x3a2018, roughness: 0.72, metalness: 0.02 }),
+      redWood: new THREE.MeshStandardMaterial({ color: 0x6b3327, roughness: 0.78, metalness: 0.02 }),
+      warmWood: new THREE.MeshStandardMaterial({ color: 0x9a6653, roughness: 0.74, metalness: 0.02 }),
+      paleWood: new THREE.MeshStandardMaterial({ color: 0xd7c7aa, roughness: 0.7, metalness: 0.02 }),
+      black: new THREE.MeshStandardMaterial({ color: 0x202020, roughness: 0.6 }),
+      base: new THREE.MeshStandardMaterial({ color: 0x4a3228, roughness: 0.8 }),
+      logo: new THREE.MeshStandardMaterial({ color: 0xf1e8d8, roughness: 0.55 })
+    };
+
+    let waveform = makeDemoWave(48);
+    let logoImage = null;
+    let recorder, chunks = [], liveStream;
+
+    const ui = {
+      status: document.querySelector('#status'),
+      recordBtn: document.querySelector('#recordBtn'),
+      stopBtn: document.querySelector('#stopBtn'),
+      audioFile: document.querySelector('#audioFile'),
+      logoFile: document.querySelector('#logoFile'),
+      stripeCount: document.querySelector('#stripeCount'),
+      heightScale: document.querySelector('#heightScale'),
+      baseDepth: document.querySelector('#baseDepth'),
+      logoSize: document.querySelector('#logoSize'),
+      randomBtn: document.querySelector('#randomBtn'),
+      exportBtn: document.querySelector('#exportBtn'),
+      stripeCountVal: document.querySelector('#stripeCountVal'),
+      heightScaleVal: document.querySelector('#heightScaleVal'),
+      baseDepthVal: document.querySelector('#baseDepthVal'),
+      logoSizeVal: document.querySelector('#logoSizeVal')
+    };
+
+    function updateLabels() {
+      ui.stripeCountVal.textContent = ui.stripeCount.value;
+      ui.heightScaleVal.textContent = Number(ui.heightScale.value).toFixed(2);
+      ui.baseDepthVal.textContent = Number(ui.baseDepth.value).toFixed(2);
+      ui.logoSizeVal.textContent = Number(ui.logoSize.value).toFixed(2);
+    }
+
+    function makeDemoWave(count) {
+      return Array.from({ length: count }, (_, i) => {
+        const a = Math.sin(i * 0.42) * 0.25 + Math.sin(i * 1.05) * 0.12;
+        const b = Math.random() * 0.25;
+        return Math.min(1, Math.max(0.08, 0.42 + a + b));
+      });
+    }
+
+    function clearGroup(group) {
+      while (group.children.length) {
+        const child = group.children.pop();
+        child.traverse?.((obj) => {
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material && obj.material.map) obj.material.map.dispose();
+        });
+      }
+    }
+
+    function box(w, h, d, mat, x, y, z, name = '') {
+      const geo = new THREE.BoxGeometry(w, h, d);
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, y, z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.name = name;
+      return mesh;
+    }
+
+    function buildModel() {
+      updateLabels();
+      clearGroup(root);
+
+      const count = Number(ui.stripeCount.value);
+      if (waveform.length !== count) waveform = resample(waveform, count);
+
+      const width = 8.8;
+      const maxH = 5.8;
+      const minH = 1.1;
+      const depth = Number(ui.baseDepth.value);
+      const scale = Number(ui.heightScale.value);
+      const spacing = width / count;
+      const stripeW = Math.max(0.055, spacing * 0.35);
+
+      const back = box(width + 0.55, maxH + 0.55, depth * 0.42, mats.base, 0, (maxH + 0.55) / 2, -depth * 0.35, 'solid_back_plate');
+      root.add(back);
+
+      const foot = box(width + 0.85, 0.28, depth * 1.8, mats.black, 0, 0.14, depth * 0.12, 'bottom_foot');
+      root.add(foot);
+
+      // Regular long vertical stripes: these are the architectural base rhythm.
+      for (let i = 0; i < count + 5; i++) {
+        const x = -width / 2 - spacing * 2 + i * spacing;
+        const h = maxH + 0.35;
+        const mat = i % 4 === 0 ? mats.darkWood : mats.black;
+        root.add(box(stripeW * 0.55, h, depth * 1.25, mat, x, h / 2 + 0.18, depth * 0.18, 'regular_long_stripe'));
+      }
+
+      // Audio waveform strips: irregular brown/cream panels derived from voice amplitude.
+      const palette = [mats.darkWood, mats.redWood, mats.warmWood, mats.paleWood];
+      for (let i = 0; i < count; i++) {
+        const x = -width / 2 + spacing / 2 + i * spacing;
+        const amp = Math.min(1, waveform[i] * scale);
+        const h = minH + amp * (maxH - minH);
+        const mat = palette[i % palette.length];
+        const zJitter = 0.23 + (i % 3) * 0.015;
+        root.add(box(stripeW, h, depth * 1.45, mat, x, h / 2 + 0.32, zJitter, 'voice_wave_stripe'));
+      }
+
+      // Thin horizontal bands inspired by the source facade.
+      for (const y of [1.45, 1.68, 1.92]) {
+        root.add(box(width + 0.35, 0.055, depth * 1.55, mats.black, 0, y, depth * 0.36, 'horizontal_band'));
+      }
+      root.add(box(width + 0.2, 0.055, depth * 1.52, mats.paleWood, 0, 1.28, depth * 0.38, 'cream_band'));
+
+      buildLogoRelief(width, maxH, depth);
+    }
+
+    function buildLogoRelief(width, maxH, depth) {
+      const logoGroup = new THREE.Group();
+      logoGroup.name = 'raised_logo_relief';
+      root.add(logoGroup);
+
+      const logoSize = Number(ui.logoSize.value);
+      const panelW = logoSize * 1.35;
+      const panelH = logoSize * 0.95;
+      const panel = box(panelW, panelH, depth * 0.16, mats.redWood, -width * 0.18, maxH * 0.5, depth * 0.74, 'logo_panel');
+      logoGroup.add(panel);
+
+      if (!logoImage) {
+        // Placeholder mark. Replace by uploading the real logo image.
+        const mark1 = box(panelW * 0.5, 0.055, depth * 0.3, mats.logo, panel.position.x, panel.position.y, depth * 0.9, 'placeholder_logo_line');
+        mark1.rotation.z = Math.PI / 4;
+        const mark2 = box(panelW * 0.5, 0.055, depth * 0.3, mats.logo, panel.position.x, panel.position.y, depth * 0.91, 'placeholder_logo_line');
+        mark2.rotation.z = -Math.PI / 4;
+        logoGroup.add(mark1, mark2);
+        return;
+      }
+
+      const relief = imageToReliefMeshes(logoImage, panelW * 0.8, panelH * 0.72, depth * 0.26, 38);
+      relief.position.set(panel.position.x - panelW * 0.4, panel.position.y - panelH * 0.36, depth * 0.89);
+      logoGroup.add(relief);
+    }
+
+    function imageToReliefMeshes(img, targetW, targetH, reliefDepth, cells) {
+      const group = new THREE.Group();
+      const canvas = document.createElement('canvas');
+      const aspect = img.width / img.height;
+      const cols = cells;
+      const rows = Math.max(10, Math.round(cells / aspect));
+      canvas.width = cols;
+      canvas.height = rows;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, cols, rows);
+      ctx.drawImage(img, 0, 0, cols, rows);
+      const data = ctx.getImageData(0, 0, cols, rows).data;
+      const cw = targetW / cols;
+      const ch = targetH / rows;
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const idx = (y * cols + x) * 4;
+          const r = data[idx], g = data[idx + 1], b = data[idx + 2], a = data[idx + 3];
+          const luminance = (r + g + b) / 3;
+          if (a > 80 && luminance < 210) {
+            const px = x * cw + cw / 2;
+            const py = (rows - y - 1) * ch + ch / 2;
+            group.add(box(cw * 0.92, ch * 0.92, reliefDepth, mats.logo, px, py, 0, 'logo_pixel_relief'));
+          }
+        }
+      }
+      return group;
+    }
+
+    function resample(arr, n) {
+      if (!arr.length) return makeDemoWave(n);
+      const out = [];
+      for (let i = 0; i < n; i++) {
+        const pos = i * (arr.length - 1) / Math.max(1, n - 1);
+        const lo = Math.floor(pos), hi = Math.min(arr.length - 1, lo + 1);
+        const t = pos - lo;
+        out.push(arr[lo] * (1 - t) + arr[hi] * t);
+      }
+      return out;
+    }
+
+    async function decodeAudioToWave(arrayBuffer, count) {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const buffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+      const channel = buffer.getChannelData(0);
+      const samplesPerBin = Math.floor(channel.length / count);
+      const values = [];
+      for (let i = 0; i < count; i++) {
+        const start = i * samplesPerBin;
+        const end = i === count - 1 ? channel.length : start + samplesPerBin;
+        let sum = 0;
+        for (let j = start; j < end; j++) sum += channel[j] * channel[j];
+        values.push(Math.sqrt(sum / Math.max(1, end - start)));
+      }
+      const max = Math.max(...values, 0.00001);
+      let normalized = values.map(v => Math.pow(v / max, 0.68));
+      normalized = smooth(normalized, 2);
+      audioCtx.close?.();
+      return normalized.map(v => Math.max(0.06, Math.min(1, v)));
+    }
+
+    function smooth(arr, passes = 1) {
+      let out = arr.slice();
+      for (let p = 0; p < passes; p++) {
+        out = out.map((v, i) => (v + (out[i - 1] ?? v) + (out[i + 1] ?? v)) / 3);
+      }
+      return out;
+    }
+
+    async function startRecording() {
+      try {
+        chunks = [];
+        liveStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recorder = new MediaRecorder(liveStream);
+        recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+        recorder.onstop = async () => {
+          const blob = new Blob(chunks, { type: recorder.mimeType });
+          const buf = await blob.arrayBuffer();
+          waveform = await decodeAudioToWave(buf, Number(ui.stripeCount.value));
+          buildModel();
+          ui.status.textContent = 'Voice captured. The brown irregular strips now follow your recording.';
+          liveStream?.getTracks().forEach(t => t.stop());
+        };
+        recorder.start();
+        ui.recordBtn.disabled = true;
+        ui.stopBtn.disabled = false;
+        ui.status.textContent = 'Recording... speak clearly.';
+      } catch (err) {
+        ui.status.textContent = 'Microphone permission failed. You can upload an audio file instead.';
+        console.error(err);
+      }
+    }
+
+    function stopRecording() {
+      if (recorder && recorder.state !== 'inactive') recorder.stop();
+      ui.recordBtn.disabled = false;
+      ui.stopBtn.disabled = true;
+    }
+
+    function download(filename, text) {
+      const blob = new Blob([text], { type: 'model/stl' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function exportSTL() {
+      const exporter = new STLExporter();
+      const stl = exporter.parse(root, { binary: false });
+      download('voice-wave-souvenir.stl', stl);
+      ui.status.textContent = 'STL exported. Open it in your slicer and scale to your desired souvenir size.';
+    }
+
+    ui.recordBtn.addEventListener('click', startRecording);
+    ui.stopBtn.addEventListener('click', stopRecording);
+    ui.randomBtn.addEventListener('click', () => {
+      waveform = makeDemoWave(Number(ui.stripeCount.value));
+      buildModel();
+      ui.status.textContent = 'Demo waveform generated.';
+    });
+    ui.exportBtn.addEventListener('click', exportSTL);
+
+    ui.audioFile.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      ui.status.textContent = 'Processing audio file...';
+      waveform = await decodeAudioToWave(await file.arrayBuffer(), Number(ui.stripeCount.value));
+      buildModel();
+      ui.status.textContent = 'Audio processed. The model has been regenerated.';
     });
 
-    async function loadFonts() {
-      const loader = new FontLoader();
-      status('Loading 3D font...');
-      fontRegular = await loader.loadAsync('https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_regular.typeface.json');
-      fontBold = await loader.loadAsync('https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json');
-      status('Ready. Record audio, crop the waveform, then generate the ornament.');
-      generatePlaceholderLetter();
+    ui.logoFile.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const img = new Image();
+      img.onload = () => {
+        logoImage = img;
+        buildModel();
+        ui.status.textContent = 'Logo loaded and converted into raised relief geometry.';
+      };
+      img.src = URL.createObjectURL(file);
+    });
+
+    for (const el of [ui.stripeCount, ui.heightScale, ui.baseDepth, ui.logoSize]) {
+      el.addEventListener('input', buildModel);
     }
 
-    function initThree() {
-      const canvas = $('viewer');
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xf3f3f5);
-
-      camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
-      camera.position.set(0, 1.5, 13);
-
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.shadowMap.enabled = true;
-
-      controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.08;
-
-      const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.8);
-      scene.add(hemi);
-
-      const key = new THREE.DirectionalLight(0xffffff, 3.2);
-      key.position.set(3, 6, 6);
-      key.castShadow = true;
-      scene.add(key);
-
-      const rim = new THREE.DirectionalLight(0xffffff, 1.4);
-      rim.position.set(-4, 2, -5);
-      scene.add(rim);
-
-      resizeRenderer();
-      animate();
-    }
-
-    function resizeRenderer() {
-      const canvas = $('viewer');
+    function resize() {
       const rect = canvas.parentElement.getBoundingClientRect();
       renderer.setSize(rect.width, rect.height, false);
       camera.aspect = rect.width / rect.height;
       camera.updateProjectionMatrix();
     }
 
+    window.addEventListener('resize', resize);
+    buildModel();
+    resize();
+
     function animate() {
-      requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
+      requestAnimationFrame(animate);
     }
-
-    startBtn.addEventListener('click', startRecording);
-    stopBtn.addEventListener('click', stopRecording);
-    playBtn.addEventListener('click', playCroppedAudio);
-    generateBtn.addEventListener('click', generateOrnament);
-    downloadBtn.addEventListener('click', downloadSTL);
-    resetBtn.addEventListener('click', resetAll);
-
-    letterInput.addEventListener('input', () => {
-      letterInput.value = (letterInput.value || 'A').slice(0, 1).toUpperCase();
-      if (!audioBuffer) generatePlaceholderLetter();
-    });
-    fontWeight.addEventListener('change', () => audioBuffer ? generateOrnament() : generatePlaceholderLetter());
-
-    heightRange.addEventListener('input', () => {
-      heightValue.textContent = `${Number(heightRange.value).toFixed(1)} cm`;
-      if (ornamentGroup) generateOrnament(false);
-    });
-    depthRange.addEventListener('input', () => {
-      depthValue.textContent = `${Number(depthRange.value).toFixed(2)} cm`;
-      if (ornamentGroup) generateOrnament(false);
-    });
-    waveRange.addEventListener('input', () => {
-      waveValue.textContent = `${Number(waveRange.value).toFixed(2)} cm`;
-      if (ornamentGroup) generateOrnament(false);
-    });
-
-    async function startRecording() {
-      try {
-        audioContext = audioContext || new AudioContext();
-        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(mediaStream);
-        chunks = [];
-
-        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-        mediaRecorder.onstop = processRecording;
-        mediaRecorder.start();
-
-        recordingStart = performance.now();
-        timerId = setInterval(updateTimer, 100);
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-        playBtn.disabled = true;
-        generateBtn.disabled = true;
-        downloadBtn.disabled = true;
-        status('Recording... speak or sing the tone you want to turn into raised 3D waves.');
-      } catch (err) {
-        status('Microphone access failed. Use HTTPS/GitHub Pages and allow microphone permission.');
-        console.error(err);
-      }
-    }
-
-    function stopRecording() {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-      if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
-      clearInterval(timerId);
-      stopBtn.disabled = true;
-      startBtn.disabled = false;
-      status('Processing recording...');
-    }
-
-    function updateTimer() {
-      const sec = Math.floor((performance.now() - recordingStart) / 1000);
-      timer.textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
-    }
-
-    async function processRecording() {
-      const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-      const arrayBuffer = await blob.arrayBuffer();
-      audioContext = audioContext || new AudioContext();
-      audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      cropStartRatio = 0.25;
-      cropEndRatio = 0.80;
-      extractWaveformSamples();
-      drawWaveform();
-      updateCropBox();
-      playBtn.disabled = false;
-      generateBtn.disabled = false;
-      status('Recording ready. Drag the blue selection to choose the part used for the ornament.');
-    }
-
-    function extractWaveformSamples() {
-      if (!audioBuffer) return;
-      const channel = audioBuffer.getChannelData(0);
-      const sampleCount = 240;
-      waveformSamples = [];
-      for (let i = 0; i < sampleCount; i++) {
-        const start = Math.floor(i * channel.length / sampleCount);
-        const end = Math.floor((i + 1) * channel.length / sampleCount);
-        let sum = 0;
-        for (let j = start; j < end; j++) sum += Math.abs(channel[j]);
-        waveformSamples.push(sum / Math.max(1, end - start));
-      }
-      const max = Math.max(...waveformSamples, 0.0001);
-      waveformSamples = waveformSamples.map(v => v / max);
-    }
-
-    async function playCroppedAudio() {
-      if (!audioBuffer) return;
-      audioContext = audioContext || new AudioContext();
-      const source = audioContext.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(audioContext.destination);
-      const start = cropStartRatio * audioBuffer.duration;
-      const duration = Math.max(0.08, (cropEndRatio - cropStartRatio) * audioBuffer.duration);
-      source.start(0, start, duration);
-      status(`Playing selected crop: ${start.toFixed(2)}s to ${(start + duration).toFixed(2)}s.`);
-    }
-
-    function resizeWaveCanvas() {
-      const rect = waveWrap.getBoundingClientRect();
-      waveCanvas.width = Math.floor(rect.width * window.devicePixelRatio);
-      waveCanvas.height = Math.floor(rect.height * window.devicePixelRatio);
-    }
-
-    function drawEmptyWaveform() {
-      const ctx = waveCanvas.getContext('2d');
-      const w = waveCanvas.width;
-      const h = waveCanvas.height;
-      ctx.clearRect(0, 0, w, h);
-      ctx.strokeStyle = '#b6b6b6';
-      ctx.setLineDash([3, 5]);
-      ctx.lineWidth = 2 * window.devicePixelRatio;
-      ctx.beginPath();
-      ctx.moveTo(0, h / 2);
-      ctx.lineTo(w, h / 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    function drawWaveform() {
-      const ctx = waveCanvas.getContext('2d');
-      const w = waveCanvas.width;
-      const h = waveCanvas.height;
-      ctx.clearRect(0, 0, w, h);
-      if (!waveformSamples.length) return drawEmptyWaveform();
-
-      const mid = h / 2;
-      const barW = w / waveformSamples.length;
-      for (let i = 0; i < waveformSamples.length; i++) {
-        const x = i * barW;
-        const amp = waveformSamples[i] * h * 0.42;
-        const selected = i / waveformSamples.length >= cropStartRatio && i / waveformSamples.length <= cropEndRatio;
-        ctx.fillStyle = selected ? '#0787ff' : '#c7c7c7';
-        ctx.fillRect(x, mid - amp, Math.max(1, barW * 0.45), amp * 2);
-      }
-    }
-
-    let cropDrag = null;
-    waveWrap.addEventListener('pointerdown', (e) => {
-      const rect = waveWrap.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width;
-      const edge = 0.035;
-      if (Math.abs(x - cropStartRatio) < edge) cropDrag = 'left';
-      else if (Math.abs(x - cropEndRatio) < edge) cropDrag = 'right';
-      else if (x > cropStartRatio && x < cropEndRatio) cropDrag = { move: true, offset: x - cropStartRatio };
-      else {
-        cropStartRatio = Math.max(0, x - 0.15);
-        cropEndRatio = Math.min(1, x + 0.15);
-        cropDrag = { move: true, offset: 0.15 };
-      }
-      waveWrap.setPointerCapture(e.pointerId);
-      updateCropByPointer(e);
-    });
-
-    waveWrap.addEventListener('pointermove', (e) => {
-      if (!cropDrag) return;
-      updateCropByPointer(e);
-    });
-
-    waveWrap.addEventListener('pointerup', (e) => {
-      cropDrag = null;
-      waveWrap.releasePointerCapture(e.pointerId);
-      if (audioBuffer) generateOrnament(false);
-    });
-
-    function updateCropByPointer(e) {
-      const rect = waveWrap.getBoundingClientRect();
-      const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-      const minWidth = 0.05;
-      if (cropDrag === 'left') cropStartRatio = Math.min(cropEndRatio - minWidth, x);
-      else if (cropDrag === 'right') cropEndRatio = Math.max(cropStartRatio + minWidth, x);
-      else if (cropDrag?.move) {
-        const width = cropEndRatio - cropStartRatio;
-        let newStart = x - cropDrag.offset;
-        newStart = Math.max(0, Math.min(1 - width, newStart));
-        cropStartRatio = newStart;
-        cropEndRatio = newStart + width;
-      }
-      updateCropBox();
-      drawWaveform();
-    }
-
-    function updateCropBox() {
-      cropBox.style.left = `${cropStartRatio * 100}%`;
-      cropBox.style.width = `${(cropEndRatio - cropStartRatio) * 100}%`;
-      const dur = audioBuffer ? audioBuffer.duration : 0;
-      startTimeEl.textContent = `${(cropStartRatio * dur).toFixed(2)}s`;
-      endTimeEl.textContent = `${(cropEndRatio * dur).toFixed(2)}s`;
-    }
-
-    function getCropSamples(count = 56) {
-      if (!waveformSamples.length) {
-        return Array.from({ length: count }, (_, i) => 0.35 + 0.25 * Math.sin(i * 0.45));
-      }
-      const start = Math.floor(cropStartRatio * waveformSamples.length);
-      const end = Math.max(start + 1, Math.floor(cropEndRatio * waveformSamples.length));
-      const crop = waveformSamples.slice(start, end);
-      const result = [];
-      for (let i = 0; i < count; i++) {
-        const idx = Math.floor(i * crop.length / count);
-        result.push(crop[Math.min(crop.length - 1, idx)] || 0);
-      }
-      return result;
-    }
-
-    function getFont() {
-      return fontWeight.value === 'bold' ? fontBold : fontRegular;
-    }
-
-    function clearOrnament() {
-      if (!ornamentGroup) return;
-      scene.remove(ornamentGroup);
-      ornamentGroup.traverse(obj => {
-        if (obj.geometry) obj.geometry.dispose();
-        if (obj.material) obj.material.dispose?.();
-      });
-      ornamentGroup = null;
-    }
-
-    function generatePlaceholderLetter() {
-      if (!fontRegular || !fontBold) return;
-      generateOrnament(false, true);
-    }
-
-    function generateOrnament(showStatus = true, placeholder = false) {
-      if (!getFont()) return;
-      clearOrnament();
-
-      const letter = (letterInput.value || 'A').slice(0, 1).toUpperCase();
-      const heightCm = Number(heightRange.value);
-      const depthCm = Number(depthRange.value);
-      const waveReliefCm = Number(waveRange.value);
-      const size = heightCm;
-      const depth = depthCm;
-
-      ornamentGroup = new THREE.Group();
-      ornamentGroup.name = 'voice-wave-letter-ornament';
-
-      const metal = new THREE.MeshStandardMaterial({
-        color: 0xd8dce2,
-        metalness: 0.82,
-        roughness: 0.24
-      });
-
-      const darkMetal = new THREE.MeshStandardMaterial({
-        color: 0x151515,
-        metalness: 0.9,
-        roughness: 0.20
-      });
-
-      const textGeo = new TextGeometry(letter, {
-        font: getFont(),
-        size,
-        height: depth,
-        curveSegments: 18,
-        bevelEnabled: true,
-        bevelThickness: 0.065,
-        bevelSize: 0.055,
-        bevelSegments: 4
-      });
-      textGeo.computeBoundingBox();
-      const box = textGeo.boundingBox;
-      const textW = box.max.x - box.min.x;
-      const textH = box.max.y - box.min.y;
-      textGeo.translate(-box.min.x - textW / 2, -box.min.y - textH / 2, -depth / 2);
-
-      const letterMesh = new THREE.Mesh(textGeo, metal);
-      letterMesh.castShadow = true;
-      letterMesh.receiveShadow = true;
-      ornamentGroup.add(letterMesh);
-
-      // Top loop so the object can be used as a hanging ornament.
-      const ringOuter = Math.max(0.42, heightCm * 0.075);
-      const ringTube = Math.max(0.085, heightCm * 0.018);
-      const ringGeo = new THREE.TorusGeometry(ringOuter, ringTube, 18, 72);
-      const ring = new THREE.Mesh(ringGeo, metal);
-      ring.rotation.x = Math.PI / 2;
-      ring.position.set(0, textH / 2 + ringOuter * 1.20, 0);
-      ornamentGroup.add(ring);
-
-      // Soundwave relief: raised horizontal/vertical ridges attached to the front face.
-      // The wave is built from the selected crop of the recorded audio.
-      const samples = getCropSamples(70);
-      const maxW = Math.max(textW * 0.94, 1);
-      const frontZ = depth / 2 + waveReliefCm / 2 + 0.01;
-      const ridgeCount = samples.length;
-      const gap = textH / (ridgeCount + 1);
-      const ridgeThickness = Math.max(0.035, heightCm * 0.010);
-
-      for (let i = 0; i < ridgeCount; i++) {
-        const normalized = placeholder ? 0.25 + 0.35 * Math.abs(Math.sin(i * 0.32)) : samples[i];
-        const ridgeW = Math.max(maxW * 0.12, maxW * (0.18 + normalized * 0.78));
-        const y = -textH / 2 + gap * (i + 1);
-        const ridgeGeo = new THREE.BoxGeometry(ridgeW, ridgeThickness, waveReliefCm);
-        const ridge = new THREE.Mesh(ridgeGeo, i % 7 === 0 ? darkMetal : metal);
-        ridge.position.set(0, y, frontZ);
-        ridge.castShadow = true;
-        ornamentGroup.add(ridge);
-      }
-
-      // Add a subtle back plate that makes thin letters printable and gives ridges support.
-      const plateShape = new THREE.Shape();
-      const plateW = Math.max(textW * 1.08, heightCm * 0.62);
-      const plateH = textH * 1.06;
-      const r = Math.min(0.35, plateW * 0.08);
-      roundedRect(plateShape, -plateW / 2, -plateH / 2, plateW, plateH, r);
-      const plateGeo = new THREE.ExtrudeGeometry(plateShape, {
-        depth: Math.max(0.12, depth * 0.30),
-        bevelEnabled: true,
-        bevelSize: 0.025,
-        bevelThickness: 0.025,
-        bevelSegments: 2
-      });
-      plateGeo.translate(0, 0, -depth / 2 - Math.max(0.12, depth * 0.30));
-      const plate = new THREE.Mesh(plateGeo, new THREE.MeshStandardMaterial({
-        color: 0xcfd3d8,
-        metalness: 0.75,
-        roughness: 0.35,
-        transparent: true,
-        opacity: 0.45
-      }));
-      plate.receiveShadow = true;
-      ornamentGroup.add(plate);
-
-      scene.add(ornamentGroup);
-      centerAndFrame(ornamentGroup);
-      downloadBtn.disabled = false;
-      if (!placeholder) generateBtn.disabled = false;
-      if (showStatus) status('3D ornament generated. Rotate the preview or download the STL for slicing.');
-    }
-
-    function roundedRect(shape, x, y, w, h, r) {
-      shape.moveTo(x + r, y);
-      shape.lineTo(x + w - r, y);
-      shape.quadraticCurveTo(x + w, y, x + w, y + r);
-      shape.lineTo(x + w, y + h - r);
-      shape.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-      shape.lineTo(x + r, y + h);
-      shape.quadraticCurveTo(x, y + h, x, y + h - r);
-      shape.lineTo(x, y + r);
-      shape.quadraticCurveTo(x, y, x + r, y);
-    }
-
-    function centerAndFrame(obj) {
-      const box = new THREE.Box3().setFromObject(obj);
-      const center = box.getCenter(new THREE.Vector3());
-      obj.position.sub(center);
-      const size = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-      camera.position.set(0, maxDim * 0.12, maxDim * 1.85);
-      camera.lookAt(0, 0, 0);
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
-
-    function downloadSTL() {
-      if (!ornamentGroup) return;
-      const exporter = new STLExporter();
-      const stlString = exporter.parse(ornamentGroup, { binary: false });
-      const blob = new Blob([stlString], { type: 'model/stl' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `voice-wave-letter-${(letterInput.value || 'A').toUpperCase()}.stl`;
-      a.click();
-      URL.revokeObjectURL(url);
-      status('STL downloaded. Open it in your slicer before sending it to a 3D printer.');
-    }
-
-    function resetAll() {
-      chunks = [];
-      audioBuffer = null;
-      waveformSamples = [];
-      cropStartRatio = 0.30;
-      cropEndRatio = 0.70;
-      timer.textContent = '00:00';
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-      playBtn.disabled = true;
-      generateBtn.disabled = true;
-      downloadBtn.disabled = true;
-      updateCropBox();
-      drawEmptyWaveform();
-      generatePlaceholderLetter();
-      status('Reset complete. Record a new voice sample to create a fresh soundwave pattern.');
-    }
-
-    function status(message) {
-      statusEl.textContent = message;
-    }
+    animate();
   </script>
 </body>
 </html>
