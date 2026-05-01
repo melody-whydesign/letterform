@@ -147,10 +147,7 @@
 
   <main>
     <section class="panel controls">
-      <div class="row">
-        <label for="userName">User name</label>
-        <input id="userName" type="text" maxlength="18" placeholder="TYPE NAME" value="YOUR NAME" />
-        <div class="hint">This appears on the front in Helvetica-style full caps, using the same yellow as the logo.</div>
+      
       </div>
 
       <div class="row">
@@ -209,8 +206,7 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { STLExporter } from 'three/addons/exporters/STLExporter.js';
     import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
-    import { FontLoader } from 'three/addons/loaders/FontLoader.js';
-    import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+    
 
     const LOGO_SVG = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 238 267">
@@ -258,15 +254,14 @@
     let liveStream = null;
     let recordedBlob = null;
     let recordedAudioUrl = null;
-    let loadedFont = null;
-    const player = new Audio();
+    
     new FontLoader().load('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json', (font) => {
       loadedFont = font;
       buildModel();
     });
 
     const ui = {
-      userName: document.querySelector('#userName'),
+      
       status: document.querySelector('#status'),
       recordBtn: document.querySelector('#recordBtn'),
       stopBtn: document.querySelector('#stopBtn'),
@@ -378,28 +373,12 @@
       }
       root.add(box(width + 0.2, 0.055, depth * 1.52, mats.paleWood, 0, 1.28, depth * 0.38, 'cream_band'));
 
-      buildBackLogo(width, maxH, depth);
-      buildFrontName(width, maxH, depth);
+      
+      
       drawWaveCanvas();
     }
 
-    function buildBackLogo(width, maxH, depth) {
-      const targetH = 3.55;
-      const targetW = targetH * (238 / 267);
-      const reliefDepth = depth * 0.06; // same shallow relief as the name
-      const loader = new SVGLoader();
-      const svgData = loader.parse(LOGO_SVG);
-      const logoGroup = new THREE.Group();
-      logoGroup.name = 'center_back_logo_relief';
-
-      for (const path of svgData.paths) {
-        const shapes = SVGLoader.createShapes(path);
-        for (const shape of shapes) {
-          const geometry = new THREE.ExtrudeGeometry(shape, {
-            depth: reliefDepth,
-            bevelEnabled: false,
-            curveSegments: 24
-          });
+    );
           const mesh = new THREE.Mesh(geometry, mats.logo);
           logoGroup.add(mesh);
         }
@@ -416,18 +395,7 @@
       root.add(logoGroup);
     }
 
-    function buildFrontName(width, maxH, depth) {
-      const name = (ui.userName.value || '').trim().toUpperCase();
-      if (!name || !loadedFont) return;
-
-      const nameDepth = depth * 0.06; // same shallow relief depth as the back logo
-      const geometry = new TextGeometry(name, {
-        font: loadedFont,
-        size: 0.42,
-        depth: nameDepth,
-        curveSegments: 8,
-        bevelEnabled: false
-      });
+    );
 
       geometry.computeBoundingBox();
       const box3 = geometry.boundingBox;
@@ -695,7 +663,7 @@
       ui.status.textContent = 'STL exported. Open it in your slicer and scale to your desired souvenir size.';
     }
 
-    ui.userName.addEventListener('input', buildModel);
+    
     ui.recordBtn.addEventListener('click', startRecording);
     ui.stopBtn.addEventListener('click', stopRecording);
     ui.playBtn.addEventListener('click', playRecording);
