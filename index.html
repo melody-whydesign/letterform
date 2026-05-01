@@ -12,6 +12,7 @@
       --muted: #7c6f66;
       --accent: #7a3f2d;
       --line: #ded0c3;
+      --gold: #ffcc00;
     }
     * { box-sizing: border-box; }
     body {
@@ -29,7 +30,7 @@
     p { margin: 0; color: var(--muted); line-height: 1.5; max-width: 940px; }
     main {
       display: grid;
-      grid-template-columns: 380px 1fr;
+      grid-template-columns: 390px 1fr;
       gap: 18px;
       padding: 16px clamp(16px, 4vw, 44px) 36px;
       min-height: calc(100vh - 120px);
@@ -48,13 +49,6 @@
     .threecol { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
     label { font-size: 13px; font-weight: 700; color: #4b382f; }
     input[type="range"] { width: 100%; }
-    input[type="file"] {
-      width: 100%;
-      border: 1px dashed #bfae9f;
-      padding: 10px;
-      border-radius: 14px;
-      background: #fffdf9;
-    }
     button {
       appearance: none;
       border: 0;
@@ -78,12 +72,6 @@
       font-size: 13px;
       line-height: 1.4;
     }
-    .swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-    .swatch {
-      height: 34px;
-      border-radius: 10px;
-      border: 1px solid rgba(0,0,0,.1);
-    }
     .hint { font-size: 12px; color: var(--muted); }
     .badge {
       position: absolute;
@@ -97,6 +85,23 @@
       font-size: 12px;
       backdrop-filter: blur(10px);
     }
+    .waveWrap {
+      position: relative;
+      border: 1px solid #d8c7b6;
+      border-radius: 16px;
+      padding: 10px;
+      background: #fffdf9;
+    }
+    #waveCanvas {
+      width: 100%;
+      height: 108px;
+      display: block;
+      border-radius: 10px;
+      background: #f4eadf;
+      cursor: pointer;
+    }
+    .cropControls { display: grid; gap: 6px; margin-top: 10px; }
+    .cropLabels { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
     @media (max-width: 980px) {
       main { grid-template-columns: 1fr; }
       .viewer, #scene { min-height: 520px; }
@@ -115,7 +120,7 @@
 <body>
   <header>
     <h1>Voice Wave Souvenir Generator</h1>
-    <p>Record a voice, turn the waveform into irregular brown facade strips, add a raised logo relief, preview the 3D object, and export an STL for 3D printing. The regular long stripes form the base rhythm; the shorter brown strips encode the audio.</p>
+    <p>Record a voice, crop the preferred part of the soundwave, convert it into facade strips, keep the logo centered, and export an STL for 3D printing.</p>
   </header>
 
   <main>
@@ -127,7 +132,20 @@
           <button id="stopBtn" class="secondary" disabled>Stop</button>
           <button id="playBtn" class="secondary" disabled>Play</button>
         </div>
-        <div id="status" class="status">Ready. Click Record and speak for 3–10 seconds. Microphone recording requires HTTPS, so it will work on GitHub Pages but may not work from a plain local file.</div>
+        <div id="status" class="status">Ready. The default souvenir shows the regular base stripes and centered logo only. Brown/cream voice strips appear after recording.</div>
+      </div>
+
+      <div class="row">
+        <label>2. Select soundwave section</label>
+        <div class="waveWrap">
+          <canvas id="waveCanvas" width="720" height="216"></canvas>
+          <div class="cropControls">
+            <div class="cropLabels"><span>Crop start: <b id="cropStartVal">0.00s</b></span><span>Crop end: <b id="cropEndVal">0.00s</b></span></div>
+            <input id="cropStart" type="range" min="0" max="1000" value="0" disabled />
+            <input id="cropEnd" type="range" min="0" max="1000" value="1000" disabled />
+          </div>
+        </div>
+        <div class="hint">Drag the crop sliders, or click the waveform to choose where playback starts. The 3D voice strips update from the selected crop.</div>
       </div>
 
       <div class="twocol">
@@ -147,39 +165,22 @@
           <input id="baseDepth" type="range" min="0.18" max="0.8" value="0.35" step="0.01" />
         </div>
         <div class="row">
-          <label for="logoSize">Logo size: <span id="logoSizeVal">1.25</span></label>
-          <input id="logoSize" type="range" min="0.6" max="2.4" value="1.25" step="0.05" />
-        </div>
-      </div>
-
-      <div class="row">
-        <label>2. Upload logo for raised relief</label>
-        <input id="logoFile" type="file" accept="image/png,image/jpeg,image/svg+xml" />
-        <div class="hint">Use a high-contrast logo image, preferably transparent PNG or SVG. STL does not preserve printed colors, so this page converts dark/opaque pixels into shallow raised geometry.</div>
-      </div>
-
-      <div class="row">
-        <label>Color palette preview</label>
-        <div class="swatches">
-          <div class="swatch" style="background:#3a2018"></div>
-          <div class="swatch" style="background:#6b3327"></div>
-          <div class="swatch" style="background:#9a6653"></div>
-          <div class="swatch" style="background:#d7c7aa"></div>
-          <div class="swatch" style="background:#202020"></div>
+          <label for="logoSize">Logo size: <span id="logoSizeVal">1.50</span></label>
+          <input id="logoSize" type="range" min="0.8" max="2.8" value="1.5" step="0.05" />
         </div>
       </div>
 
       <div class="twocol">
-        <button id="randomBtn" class="secondary">Demo Wave</button>
+        <button id="frontBtn" class="secondary">Front View</button>
         <button id="exportBtn" class="export">Export STL</button>
       </div>
 
-      <div class="hint">Print tip: export in millimeters from your slicer. For a stronger souvenir, keep a 3–5 mm minimum base thickness and avoid very thin logo lines.</div>
+      <div class="hint">Microphone recording requires HTTPS. It should work on GitHub Pages, but it may not work by opening the file directly from your computer.</div>
     </section>
 
     <section class="panel viewer">
       <canvas id="scene"></canvas>
-      <div class="badge">Drag to rotate · Scroll to zoom</div>
+      <div class="badge">Default front view · Drag to rotate · Scroll to zoom</div>
     </section>
   </main>
 
@@ -187,6 +188,18 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { STLExporter } from 'three/addons/exporters/STLExporter.js';
+
+    const LOGO_SVG = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200">
+        <rect width="1200" height="1200" fill="white"/>
+        <g fill="#ffcc00">
+          <path d="M418 150 C552 145 665 168 732 228 C804 292 806 397 740 465 C686 521 585 542 520 512 C485 496 470 468 460 430 C436 330 403 234 330 160 Z"/>
+          <path d="M68 348 C164 368 288 362 430 363 L852 363 L930 270 C942 256 958 256 972 267 L1086 360 C1115 383 1108 391 1076 391 L205 391 C158 391 120 394 94 400 Z"/>
+          <path d="M248 442 C373 541 487 674 498 748 C506 808 468 858 416 859 C372 860 355 831 349 779 C329 615 292 512 248 442 Z"/>
+          <path d="M728 746 C792 732 866 694 942 641 C1035 576 1065 501 1018 457 C970 412 895 428 840 492 C782 560 758 643 728 746 Z M512 965 C563 895 593 803 620 714 C663 574 769 431 877 386 C957 353 1033 350 1073 401 C1125 466 1088 565 976 649 C893 711 799 753 724 762 C696 852 649 925 565 978 C706 1032 862 1055 990 1014 C1110 976 1174 901 1135 833 C1104 778 1025 771 950 812 C918 830 890 857 859 888 L849 879 C878 829 916 789 972 770 C1072 737 1178 783 1196 877 C1215 974 1134 1052 1014 1081 C868 1117 704 1089 545 997 C410 1082 235 1087 130 1045 C35 1007 9 929 59 881 C126 818 246 844 355 893 C409 917 460 943 512 965 Z M499 988 C451 963 400 938 343 917 C254 885 173 889 132 933 C101 966 127 1010 190 1032 C270 1061 404 1040 499 988 Z"/>
+          <path d="M500 749 C543 754 582 757 621 757 L616 769 C575 769 535 765 497 759 Z"/>
+        </g>
+      </svg>`;
 
     const canvas = document.querySelector('#scene');
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -196,16 +209,14 @@
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf7efe6);
 
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    camera.position.set(5.8, 4.3, 8.4);
-
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.target.set(0, 2.1, 0);
+    controls.target.set(0, 3.05, 0);
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x664433, 2.1));
-    const key = new THREE.DirectionalLight(0xffffff, 2.2);
-    key.position.set(3, 7, 5);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x664433, 2.2));
+    const key = new THREE.DirectionalLight(0xffffff, 2.0);
+    key.position.set(3, 7, 6);
     scene.add(key);
 
     const root = new THREE.Group();
@@ -218,11 +229,14 @@
       paleWood: new THREE.MeshStandardMaterial({ color: 0xd7c7aa, roughness: 0.7, metalness: 0.02 }),
       black: new THREE.MeshStandardMaterial({ color: 0x202020, roughness: 0.6 }),
       base: new THREE.MeshStandardMaterial({ color: 0x4a3228, roughness: 0.8 }),
-      logo: new THREE.MeshStandardMaterial({ color: 0xf1e8d8, roughness: 0.55 })
+      logo: new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.5 })
     };
 
-    let waveform = makeDemoWave(48);
-    let logoImage = null;
+    let hasRecording = false;
+    let rawSamples = [];
+    let duration = 0;
+    let waveform = [];
+    let playStartSeconds = 0;
     let recorder = null;
     let chunks = [];
     let liveStream = null;
@@ -235,12 +249,16 @@
       recordBtn: document.querySelector('#recordBtn'),
       stopBtn: document.querySelector('#stopBtn'),
       playBtn: document.querySelector('#playBtn'),
-      logoFile: document.querySelector('#logoFile'),
+      waveCanvas: document.querySelector('#waveCanvas'),
+      cropStart: document.querySelector('#cropStart'),
+      cropEnd: document.querySelector('#cropEnd'),
+      cropStartVal: document.querySelector('#cropStartVal'),
+      cropEndVal: document.querySelector('#cropEndVal'),
       stripeCount: document.querySelector('#stripeCount'),
       heightScale: document.querySelector('#heightScale'),
       baseDepth: document.querySelector('#baseDepth'),
       logoSize: document.querySelector('#logoSize'),
-      randomBtn: document.querySelector('#randomBtn'),
+      frontBtn: document.querySelector('#frontBtn'),
       exportBtn: document.querySelector('#exportBtn'),
       stripeCountVal: document.querySelector('#stripeCountVal'),
       heightScaleVal: document.querySelector('#heightScaleVal'),
@@ -257,14 +275,18 @@
       ui.heightScaleVal.textContent = Number(ui.heightScale.value).toFixed(2);
       ui.baseDepthVal.textContent = Number(ui.baseDepth.value).toFixed(2);
       ui.logoSizeVal.textContent = Number(ui.logoSize.value).toFixed(2);
+      const start = cropStartSeconds();
+      const end = cropEndSeconds();
+      ui.cropStartVal.textContent = `${start.toFixed(2)}s`;
+      ui.cropEndVal.textContent = `${end.toFixed(2)}s`;
     }
 
-    function makeDemoWave(count) {
-      return Array.from({ length: count }, (_, i) => {
-        const a = Math.sin(i * 0.42) * 0.25 + Math.sin(i * 1.05) * 0.12;
-        const b = Math.random() * 0.25;
-        return Math.min(1, Math.max(0.08, 0.42 + a + b));
-      });
+    function cropStartSeconds() {
+      return duration * Number(ui.cropStart.value) / 1000;
+    }
+
+    function cropEndSeconds() {
+      return duration * Number(ui.cropEnd.value) / 1000;
     }
 
     function clearGroup(group) {
@@ -272,6 +294,7 @@
         const child = group.children.pop();
         child.traverse?.((obj) => {
           if (obj.geometry) obj.geometry.dispose();
+          if (obj.material?.map) obj.material.map.dispose();
         });
       }
     }
@@ -286,14 +309,18 @@
       return mesh;
     }
 
+    function setFrontView() {
+      camera.position.set(0, 3.05, 13.2);
+      controls.target.set(0, 3.05, 0);
+      controls.update();
+    }
+
     function buildModel() {
       updateLabels();
       clearGroup(root);
 
       const count = Number(ui.stripeCount.value);
-      if (waveform.length !== count) waveform = resample(waveform, count);
-
-      const width = 8.8;
+      const width = 9.2;
       const maxH = 5.8;
       const minH = 1.1;
       const depth = Number(ui.baseDepth.value);
@@ -301,27 +328,28 @@
       const spacing = width / count;
       const stripeW = Math.max(0.055, spacing * 0.35);
 
-      const back = box(width + 0.55, maxH + 0.55, depth * 0.42, mats.base, 0, (maxH + 0.55) / 2, -depth * 0.35, 'solid_back_plate');
-      root.add(back);
+      root.add(box(width + 0.55, maxH + 0.55, depth * 0.42, mats.base, 0, (maxH + 0.55) / 2, -depth * 0.35, 'solid_back_plate'));
+      root.add(box(width + 0.85, 0.28, depth * 1.8, mats.black, 0, 0.14, depth * 0.12, 'bottom_foot'));
 
-      const foot = box(width + 0.85, 0.28, depth * 1.8, mats.black, 0, 0.14, depth * 0.12, 'bottom_foot');
-      root.add(foot);
-
+      // Default preview: only regular long base stripes plus centered logo.
       for (let i = 0; i < count + 5; i++) {
         const x = -width / 2 - spacing * 2 + i * spacing;
         const h = maxH + 0.35;
-        const mat = i % 4 === 0 ? mats.darkWood : mats.black;
-        root.add(box(stripeW * 0.55, h, depth * 1.25, mat, x, h / 2 + 0.18, depth * 0.18, 'regular_long_stripe'));
+        root.add(box(stripeW * 0.55, h, depth * 1.25, mats.darkWood, x, h / 2 + 0.18, depth * 0.18, 'regular_long_stripe'));
       }
 
-      const palette = [mats.darkWood, mats.redWood, mats.warmWood, mats.paleWood];
-      for (let i = 0; i < count; i++) {
-        const x = -width / 2 + spacing / 2 + i * spacing;
-        const amp = Math.min(1, waveform[i] * scale);
-        const h = minH + amp * (maxH - minH);
-        const mat = palette[i % palette.length];
-        const zJitter = 0.23 + (i % 3) * 0.015;
-        root.add(box(stripeW, h, depth * 1.45, mat, x, h / 2 + 0.32, zJitter, 'voice_wave_stripe'));
+      // Brown/cream voice strips only appear after recording.
+      if (hasRecording && waveform.length) {
+        const palette = [mats.darkWood, mats.redWood, mats.warmWood, mats.paleWood];
+        const values = resample(waveform, count);
+        for (let i = 0; i < count; i++) {
+          const x = -width / 2 + spacing / 2 + i * spacing;
+          const amp = Math.min(1, values[i] * scale);
+          const h = minH + amp * (maxH - minH);
+          const mat = palette[i % palette.length];
+          const zJitter = 0.23 + (i % 3) * 0.015;
+          root.add(box(stripeW, h, depth * 1.45, mat, x, h / 2 + 0.32, zJitter, 'voice_wave_stripe'));
+        }
       }
 
       for (const y of [1.45, 1.68, 1.92]) {
@@ -329,65 +357,58 @@
       }
       root.add(box(width + 0.2, 0.055, depth * 1.52, mats.paleWood, 0, 1.28, depth * 0.38, 'cream_band'));
 
-      buildLogoRelief(width, maxH, depth);
+      buildCenteredLogo(width, maxH, depth);
+      drawWaveCanvas();
     }
 
-    function buildLogoRelief(width, maxH, depth) {
-      const logoGroup = new THREE.Group();
-      logoGroup.name = 'raised_logo_relief';
-      root.add(logoGroup);
-
+    function buildCenteredLogo(width, maxH, depth) {
       const logoSize = Number(ui.logoSize.value);
-      const panelW = logoSize * 1.35;
-      const panelH = logoSize * 0.95;
-      const panel = box(panelW, panelH, depth * 0.16, mats.redWood, -width * 0.18, maxH * 0.5, depth * 0.74, 'logo_panel');
-      logoGroup.add(panel);
-
-      if (!logoImage) {
-        const mark1 = box(panelW * 0.5, 0.055, depth * 0.3, mats.logo, panel.position.x, panel.position.y, depth * 0.9, 'placeholder_logo_line');
-        mark1.rotation.z = Math.PI / 4;
-        const mark2 = box(panelW * 0.5, 0.055, depth * 0.3, mats.logo, panel.position.x, panel.position.y, depth * 0.91, 'placeholder_logo_line');
-        mark2.rotation.z = -Math.PI / 4;
-        logoGroup.add(mark1, mark2);
-        return;
-      }
-
-      const relief = imageToReliefMeshes(logoImage, panelW * 0.8, panelH * 0.72, depth * 0.26, 38);
-      relief.position.set(panel.position.x - panelW * 0.4, panel.position.y - panelH * 0.36, depth * 0.89);
-      logoGroup.add(relief);
+      const logoGroup = imageSvgToRelief(LOGO_SVG, logoSize * 2.0, logoSize * 2.0, depth * 0.22, 66);
+      logoGroup.name = 'center_logo_relief';
+      logoGroup.position.set(-logoSize, maxH * 0.53 - logoSize, depth * 0.98);
+      root.add(logoGroup);
     }
 
-    function imageToReliefMeshes(img, targetW, targetH, reliefDepth, cells) {
+    function imageSvgToRelief(svg, targetW, targetH, reliefDepth, cells) {
       const group = new THREE.Group();
-      const tempCanvas = document.createElement('canvas');
-      const aspect = img.width / img.height;
-      const cols = cells;
-      const rows = Math.max(10, Math.round(cells / aspect));
-      tempCanvas.width = cols;
-      tempCanvas.height = rows;
-      const ctx = tempCanvas.getContext('2d');
-      ctx.clearRect(0, 0, cols, rows);
-      ctx.drawImage(img, 0, 0, cols, rows);
-      const data = ctx.getImageData(0, 0, cols, rows).data;
-      const cw = targetW / cols;
-      const ch = targetH / rows;
-      for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-          const idx = (y * cols + x) * 4;
-          const r = data[idx], g = data[idx + 1], b = data[idx + 2], a = data[idx + 3];
-          const luminance = (r + g + b) / 3;
-          if (a > 80 && luminance < 210) {
-            const px = x * cw + cw / 2;
-            const py = (rows - y - 1) * ch + ch / 2;
-            group.add(box(cw * 0.92, ch * 0.92, reliefDepth, mats.logo, px, py, 0, 'logo_pixel_relief'));
+      const img = new Image();
+      const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+
+      // The first build may happen before the image loads. Add a simple centered gold mark immediately,
+      // then rebuild with the full pixel relief after load.
+      const placeholder = box(targetW * 0.45, targetH * 0.45, reliefDepth, mats.logo, targetW / 2, targetH / 2, 0, 'logo_placeholder');
+      placeholder.rotation.z = Math.PI / 4;
+      group.add(placeholder);
+
+      img.onload = () => {
+        group.remove(placeholder);
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = cells;
+        tempCanvas.height = cells;
+        const ctx = tempCanvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, cells, cells);
+        const data = ctx.getImageData(0, 0, cells, cells).data;
+        const cw = targetW / cells;
+        const ch = targetH / cells;
+        for (let y = 0; y < cells; y++) {
+          for (let x = 0; x < cells; x++) {
+            const idx = (y * cells + x) * 4;
+            const r = data[idx], g = data[idx + 1], b = data[idx + 2], a = data[idx + 3];
+            const isGold = a > 80 && r > 180 && g > 130 && b < 80;
+            if (isGold) {
+              const px = x * cw + cw / 2;
+              const py = (cells - y - 1) * ch + ch / 2;
+              group.add(box(cw * 0.96, ch * 0.96, reliefDepth, mats.logo, px, py, 0, 'logo_pixel_relief'));
+            }
           }
         }
-      }
+      };
+      img.src = url;
       return group;
     }
 
     function resample(arr, n) {
-      if (!arr.length) return makeDemoWave(n);
+      if (!arr.length) return Array.from({ length: n }, () => 0);
       const out = [];
       for (let i = 0; i < n; i++) {
         const pos = i * (arr.length - 1) / Math.max(1, n - 1);
@@ -398,26 +419,45 @@
       return out;
     }
 
-    async function decodeAudioToWave(arrayBuffer, count) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) throw new Error('This browser does not support Web Audio.');
-      const audioCtx = new AudioCtx();
-      const buffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
-      const channel = buffer.getChannelData(0);
-      const samplesPerBin = Math.max(1, Math.floor(channel.length / count));
+    function computeWaveFromCrop() {
+      if (!rawSamples.length || !duration) {
+        waveform = [];
+        return;
+      }
+      let start = cropStartSeconds();
+      let end = cropEndSeconds();
+      if (end <= start + 0.1) end = Math.min(duration, start + 0.1);
+      const startIndex = Math.floor((start / duration) * rawSamples.length);
+      const endIndex = Math.max(startIndex + 1, Math.floor((end / duration) * rawSamples.length));
+      const section = rawSamples.slice(startIndex, endIndex);
+      waveform = sampleToBins(section, Number(ui.stripeCount.value));
+    }
+
+    function sampleToBins(samples, count) {
+      const samplesPerBin = Math.max(1, Math.floor(samples.length / count));
       const values = [];
       for (let i = 0; i < count; i++) {
         const start = i * samplesPerBin;
-        const end = i === count - 1 ? channel.length : Math.min(channel.length, start + samplesPerBin);
+        const end = i === count - 1 ? samples.length : Math.min(samples.length, start + samplesPerBin);
         let sum = 0;
-        for (let j = start; j < end; j++) sum += channel[j] * channel[j];
+        for (let j = start; j < end; j++) sum += samples[j] * samples[j];
         values.push(Math.sqrt(sum / Math.max(1, end - start)));
       }
       const max = Math.max(...values, 0.00001);
       let normalized = values.map(v => Math.pow(v / max, 0.68));
       normalized = smooth(normalized, 2);
-      await audioCtx.close?.();
       return normalized.map(v => Math.max(0.06, Math.min(1, v)));
+    }
+
+    async function decodeAudio(arrayBuffer) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) throw new Error('This browser does not support Web Audio.');
+      const audioCtx = new AudioCtx();
+      const buffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+      duration = buffer.duration;
+      rawSamples = Array.from(buffer.getChannelData(0));
+      await audioCtx.close?.();
+      computeWaveFromCrop();
     }
 
     function smooth(arr, passes = 1) {
@@ -440,6 +480,7 @@
         }
         chunks = [];
         recordedBlob = null;
+        hasRecording = false;
         ui.playBtn.disabled = true;
         liveStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mimeType = chooseSupportedMimeType();
@@ -460,13 +501,18 @@
             recordedAudioUrl = URL.createObjectURL(recordedBlob);
             player.src = recordedAudioUrl;
             ui.playBtn.disabled = false;
+            ui.cropStart.disabled = false;
+            ui.cropEnd.disabled = false;
+            ui.cropStart.value = 0;
+            ui.cropEnd.value = 1000;
+            playStartSeconds = 0;
 
-            const buf = await recordedBlob.arrayBuffer();
-            waveform = await decodeAudioToWave(buf, Number(ui.stripeCount.value));
+            await decodeAudio(await recordedBlob.arrayBuffer());
+            hasRecording = true;
             buildModel();
-            ui.status.textContent = 'Voice captured. Click Play to hear it, or Export STL to download the 3D model.';
+            ui.status.textContent = 'Voice captured. Use the waveform crop controls, Play the selected part, or Export STL.';
           } catch (err) {
-            ui.status.textContent = 'The voice was recorded, but waveform decoding failed in this browser. Try Chrome or Edge on HTTPS.';
+            ui.status.textContent = 'The voice was recorded, but waveform decoding failed. Try Chrome or Edge on HTTPS.';
             console.error(err);
           } finally {
             liveStream?.getTracks().forEach(t => t.stop());
@@ -480,6 +526,7 @@
         ui.recordBtn.disabled = true;
         ui.stopBtn.disabled = false;
         ui.status.textContent = 'Recording... speak clearly, then click Stop.';
+        buildModel();
       } catch (err) {
         ui.status.textContent = err.message || 'Microphone permission failed. Make sure the page is served over HTTPS and microphone access is allowed.';
         ui.recordBtn.disabled = false;
@@ -497,10 +544,86 @@
 
     function playRecording() {
       if (!recordedAudioUrl) return;
-      player.currentTime = 0;
+      const start = Math.max(cropStartSeconds(), playStartSeconds);
+      const end = cropEndSeconds();
+      player.currentTime = start;
       player.play().catch(err => {
         ui.status.textContent = 'Playback failed: ' + err.message;
       });
+      const stopTimer = setInterval(() => {
+        if (player.paused || player.currentTime >= end) {
+          player.pause();
+          clearInterval(stopTimer);
+        }
+      }, 30);
+    }
+
+    function drawWaveCanvas() {
+      const c = ui.waveCanvas;
+      const ctx = c.getContext('2d');
+      const w = c.width;
+      const h = c.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#f4eadf';
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = '#d8c7b6';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, h / 2);
+      ctx.lineTo(w, h / 2);
+      ctx.stroke();
+
+      if (!rawSamples.length) {
+        ctx.fillStyle = '#8a7769';
+        ctx.font = '24px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Record audio to see the soundwave', w / 2, h / 2 + 8);
+        return;
+      }
+
+      const bars = Math.min(360, w);
+      const per = Math.max(1, Math.floor(rawSamples.length / bars));
+      ctx.fillStyle = '#7a3f2d';
+      for (let i = 0; i < bars; i++) {
+        let peak = 0;
+        const start = i * per;
+        const end = Math.min(rawSamples.length, start + per);
+        for (let j = start; j < end; j++) peak = Math.max(peak, Math.abs(rawSamples[j]));
+        const barH = Math.max(2, peak * h * 0.82);
+        const x = i * w / bars;
+        ctx.fillRect(x, h / 2 - barH / 2, Math.max(1, w / bars - 1), barH);
+      }
+
+      const sx = Number(ui.cropStart.value) / 1000 * w;
+      const ex = Number(ui.cropEnd.value) / 1000 * w;
+      ctx.fillStyle = 'rgba(255,255,255,.62)';
+      ctx.fillRect(0, 0, sx, h);
+      ctx.fillRect(ex, 0, w - ex, h);
+      ctx.strokeStyle = '#ffcc00';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(sx, 3, Math.max(3, ex - sx), h - 6);
+
+      const px = duration ? (playStartSeconds / duration) * w : sx;
+      ctx.strokeStyle = '#202020';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(px, 0);
+      ctx.lineTo(px, h);
+      ctx.stroke();
+    }
+
+    function handleCropChange(changed) {
+      let s = Number(ui.cropStart.value);
+      let e = Number(ui.cropEnd.value);
+      if (changed === 'start' && s > e - 20) s = e - 20;
+      if (changed === 'end' && e < s + 20) e = s + 20;
+      s = Math.max(0, Math.min(980, s));
+      e = Math.max(20, Math.min(1000, e));
+      ui.cropStart.value = s;
+      ui.cropEnd.value = e;
+      playStartSeconds = cropStartSeconds();
+      computeWaveFromCrop();
+      buildModel();
     }
 
     function download(filename, text) {
@@ -524,29 +647,28 @@
     ui.recordBtn.addEventListener('click', startRecording);
     ui.stopBtn.addEventListener('click', stopRecording);
     ui.playBtn.addEventListener('click', playRecording);
-
-    ui.randomBtn.addEventListener('click', () => {
-      waveform = makeDemoWave(Number(ui.stripeCount.value));
-      buildModel();
-      ui.status.textContent = 'Demo waveform generated.';
-    });
+    ui.frontBtn.addEventListener('click', setFrontView);
     ui.exportBtn.addEventListener('click', exportSTL);
 
-    ui.logoFile.addEventListener('change', (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const img = new Image();
-      img.onload = () => {
-        logoImage = img;
-        buildModel();
-        ui.status.textContent = 'Logo loaded and converted into raised relief geometry.';
-        URL.revokeObjectURL(img.src);
-      };
-      img.src = URL.createObjectURL(file);
+    ui.cropStart.addEventListener('input', () => handleCropChange('start'));
+    ui.cropEnd.addEventListener('input', () => handleCropChange('end'));
+
+    ui.waveCanvas.addEventListener('click', (event) => {
+      if (!duration) return;
+      const rect = ui.waveCanvas.getBoundingClientRect();
+      const ratio = (event.clientX - rect.left) / rect.width;
+      const s = Number(ui.cropStart.value) / 1000;
+      const e = Number(ui.cropEnd.value) / 1000;
+      const clamped = Math.max(s, Math.min(e, ratio));
+      playStartSeconds = clamped * duration;
+      drawWaveCanvas();
     });
 
     for (const el of [ui.stripeCount, ui.heightScale, ui.baseDepth, ui.logoSize]) {
-      el.addEventListener('input', buildModel);
+      el.addEventListener('input', () => {
+        computeWaveFromCrop();
+        buildModel();
+      });
     }
 
     function resize() {
@@ -561,6 +683,7 @@
     window.addEventListener('resize', resize);
     buildModel();
     resize();
+    setFrontView();
 
     function animate() {
       controls.update();
